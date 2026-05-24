@@ -1,11 +1,21 @@
+"""
+database.py — SQLite schema + CRUD helpers.
+v2: added contract_type, raw_post_text, source expanded to adzuna|social|manual
+"""
+
 import sqlite3
 import os
+import pandas as pd
 
 DB_PATH = os.path.join(os.path.dirname(__file__), '..', 'data', 'jobs.db')
 
+
 def get_connection():
     os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
-    return sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    return conn
+
 
 def init_db():
     conn = get_connection()
@@ -13,12 +23,11 @@ def init_db():
 
     c.execute('''
         CREATE TABLE IF NOT EXISTS companies (
-            id      INTEGER PRIMARY KEY AUTOINCREMENT,
-            name    TEXT UNIQUE NOT NULL
+            id   INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT UNIQUE NOT NULL
         )
     ''')
 
-    # country + job_type stored now — will power the country filter toggle later
     c.execute('''
         CREATE TABLE IF NOT EXISTS jobs (
             id            INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -27,12 +36,14 @@ def init_db():
             company_id    INTEGER REFERENCES companies(id),
             location      TEXT,
             country       TEXT,
-            job_type      TEXT DEFAULT 'onsite',   -- onsite | remote | hybrid
+            job_type      TEXT DEFAULT 'onsite',
+            contract_type TEXT DEFAULT 'full-time',
             salary_min    REAL,
             salary_max    REAL,
             description   TEXT,
             source        TEXT DEFAULT 'adzuna',
             source_url    TEXT,
+            raw_post_text TEXT,
             scraped_at    DATETIME DEFAULT CURRENT_TIMESTAMP
         )
     ''')
@@ -54,27 +65,40 @@ def init_db():
         )
     ''')
 
+    # migration: add new columns if they don't exist yet (safe to run repeatedly)
+    _safe_add_column(c, 'jobs', 'contract_type', "TEXT DEFAULT 'full-time'")
+    _safe_add_column(c, 'jobs', 'raw_post_text', 'TEXT')
+    _safe_add_column(c, 'jobs', 'seniority', 'TEXT')
+
     conn.commit()
     conn.close()
-    print("[DB] Tables ready.")
+    print('[DB] Schema ready.')
+
+
+def _safe_add_column(cursor, table, column, definition):
+    try:
+        cursor.execute(f'ALTER TABLE {table} ADD COLUMN {column} {definition}')
+    except sqlite3.OperationalError:
+        pass  # column already exists
+
 
 def insert_job(job: dict) -> int | None:
     conn = get_connection()
     c = conn.cursor()
 
-    c.execute(
-        'INSERT OR IGNORE INTO companies (name) VALUES (?)',
-        (job.get('company', 'Unknown'),)
-    )
-    c.execute('SELECT id FROM companies WHERE name = ?', (job.get('company', 'Unknown'),))
+    c.execute('INSERT OR IGNORE INTO companies (name) VALUES (?)',
+              (job.get('company', 'Unknown'),))
+    c.execute('SELECT id FROM companies WHERE name = ?',
+              (job.get('company', 'Unknown'),))
     company_id = c.fetchone()[0]
 
     try:
         c.execute('''
             INSERT OR IGNORE INTO jobs
-                (source_id, title, company_id, location, country, job_type,
-                 salary_min, salary_max, description, source, source_url)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                (source_id, title, company_id, location, country,
+                 job_type, contract_type, salary_min, salary_max,
+                 description, source, source_url, raw_post_text)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (
             job.get('source_id'),
             job.get('title'),
@@ -82,31 +106,36 @@ def insert_job(job: dict) -> int | None:
             job.get('location'),
             job.get('country'),
             job.get('job_type', 'onsite'),
+            job.get('contract_type', 'full-time'),
             job.get('salary_min'),
             job.get('salary_max'),
             job.get('description'),
             job.get('source', 'adzuna'),
             job.get('source_url'),
+            job.get('raw_post_text'),
         ))
         conn.commit()
         job_id = c.lastrowid
     except Exception as e:
-        print(f"[DB] insert_job error: {e}")
+        print(f'[DB] insert_job error: {e}')
         job_id = None
     finally:
         conn.close()
 
     return job_id
 
+
 def insert_skill(name: str, category: str = None) -> int:
     conn = get_connection()
     c = conn.cursor()
-    c.execute('INSERT OR IGNORE INTO skills (name, category) VALUES (?, ?)', (name, category))
+    c.execute('INSERT OR IGNORE INTO skills (name, category) VALUES (?, ?)',
+              (name, category))
     conn.commit()
     c.execute('SELECT id FROM skills WHERE name = ?', (name,))
     skill_id = c.fetchone()[0]
     conn.close()
     return skill_id
+
 
 def insert_job_skill(job_id: int, skill_id: int, score: float):
     conn = get_connection()
@@ -118,15 +147,125 @@ def insert_job_skill(job_id: int, skill_id: int, score: float):
     conn.commit()
     conn.close()
 
-def fetch_all_jobs() -> list[dict]:
+
+def fetch_all_jobs(
+    country: str = None,
+    job_type: str = None,
+    contract_type: str = None,
+    seniority: str = None,
+    limit: int = 500,
+) -> list[dict]:
     conn = get_connection()
-    conn.row_factory = sqlite3.Row
     c = conn.cursor()
-    c.execute('''
+
+    query = '''
         SELECT j.*, co.name AS company_name
         FROM jobs j
         LEFT JOIN companies co ON j.company_id = co.id
-    ''')
+        WHERE 1=1
+    '''
+    params = []
+
+    if country and country != 'all':
+        query += ' AND LOWER(j.country) = LOWER(?)'
+        params.append(country)
+    if job_type and job_type != 'all':
+        query += ' AND j.job_type = ?'
+        params.append(job_type)
+    if contract_type and contract_type != 'all':
+        query += ' AND j.contract_type = ?'
+        params.append(contract_type)
+    if seniority and seniority != 'all':
+        query += ' AND j.seniority = ?'
+        params.append(seniority)
+
+    query += ' ORDER BY j.scraped_at DESC LIMIT ?'
+    params.append(limit)
+
+    c.execute(query, params)
     rows = [dict(r) for r in c.fetchall()]
     conn.close()
     return rows
+
+
+def get_stats() -> dict:
+    conn = get_connection()
+    c = conn.cursor()
+
+    c.execute('SELECT COUNT(*) FROM jobs')
+    total = c.fetchone()[0]
+
+    c.execute("SELECT COUNT(*) FROM jobs WHERE job_type = 'remote'")
+    remote = c.fetchone()[0]
+
+    c.execute("SELECT COUNT(*) FROM jobs WHERE contract_type = 'internship'")
+    internships = c.fetchone()[0]
+
+    c.execute('SELECT COUNT(DISTINCT company_id) FROM jobs')
+    companies = c.fetchone()[0]
+
+    c.execute('SELECT COUNT(DISTINCT country) FROM jobs')
+    countries = c.fetchone()[0]
+
+    c.execute("SELECT COUNT(*) FROM jobs WHERE source = 'social'")
+    social = c.fetchone()[0]
+
+    c.execute('SELECT MAX(scraped_at) FROM jobs')
+    last_updated = c.fetchone()[0]
+
+    conn.close()
+    return {
+        'total': total,
+        'remote': remote,
+        'internships': internships,
+        'companies': companies,
+        'countries': countries,
+        'social_posts': social,
+        'last_updated': last_updated,
+    }
+
+
+def get_filter_options() -> dict:
+    """Optimized SQL DISTINCT queries for filter dropdowns."""
+    conn = get_connection()
+    c = conn.cursor()
+
+    c.execute('SELECT DISTINCT country FROM jobs WHERE country IS NOT NULL ORDER BY country')
+    countries = [r[0] for r in c.fetchall()]
+
+    c.execute('SELECT DISTINCT seniority FROM jobs WHERE seniority IS NOT NULL ORDER BY seniority')
+    seniorities = [r[0] for r in c.fetchall()]
+
+    conn.close()
+    return {'countries': countries, 'seniorities': seniorities}
+
+
+def get_seniority_breakdown() -> list[dict]:
+    """Seniority distribution for donut chart."""
+    conn = get_connection()
+    df = pd.read_sql('''
+        SELECT seniority, COUNT(*) as count
+        FROM jobs
+        WHERE seniority IS NOT NULL
+        GROUP BY seniority
+        ORDER BY count DESC
+    ''', conn)
+    conn.close()
+    return df.to_dict(orient='records')
+
+
+def get_avg_salary_by_seniority() -> list[dict]:
+    """Average salary range grouped by seniority level."""
+    conn = get_connection()
+    df = pd.read_sql('''
+        SELECT seniority,
+               ROUND(AVG(salary_min), 0) AS avg_min,
+               ROUND(AVG(salary_max), 0) AS avg_max,
+               COUNT(*) AS job_count
+        FROM jobs
+        WHERE salary_min IS NOT NULL AND seniority IS NOT NULL
+        GROUP BY seniority
+        ORDER BY avg_max DESC
+    ''', conn)
+    conn.close()
+    return df.to_dict(orient='records')

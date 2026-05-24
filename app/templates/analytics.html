@@ -1,0 +1,263 @@
+{% extends "base.html" %}
+{% block title %}Analytics{% endblock %}
+
+{% block content %}
+<div class="mb-10">
+  <h1 class="text-4xl font-black tracking-tight text-brand-textLight mb-2">NLP Analytics Hub</h1>
+  <p class="text-sm text-brand-textMuted">Advanced statistical summaries, clustering models, and extraction layers.</p>
+</div>
+
+<div class="grid lg:grid-cols-2 gap-8 mb-8">
+
+  <div class="chart-card group relative overflow-hidden">
+    <div class="absolute -right-20 -top-20 w-40 h-40 bg-brand-teal/5 rounded-full blur-2xl pointer-events-none"></div>
+    <h2 class="chart-title">Skills Word Cloud Matrix</h2>
+    <div class="p-4 bg-brand-dark/40 rounded-2xl border border-slate-800/50 flex items-center justify-center min-h-[320px]">
+      {% if wordcloud_b64 %}
+        <img src="data:image/png;base64,{{ wordcloud_b64 }}"
+             class="w-full h-auto rounded-xl transition-transform duration-500 group-hover:scale-[1.02] mix-blend-screen" alt="Word cloud" />
+      {% else %}
+        <div class="text-center text-brand-textMuted text-sm">
+          <p class="text-3xl mb-2">📊</p>
+          <p>No operational pipeline data ingested yet. Run sync script.</p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="chart-card">
+    <h2 class="chart-title">Skill Demand Ranking</h2>
+    <div id="chartTrends" class="h-80"></div>
+  </div>
+
+</div>
+
+<div class="grid lg:grid-cols-2 gap-8 mb-8">
+
+  <div class="chart-card">
+    <h2 class="chart-title">Job Clusters (KMeans ML)</h2>
+    <div id="chartClusters" class="h-80"></div>
+  </div>
+
+  <div class="chart-card">
+    <h2 class="chart-title">Skill Co-occurrence Heatmap</h2>
+    <div id="chartCooc" class="h-80"></div>
+  </div>
+
+</div>
+
+<div class="grid lg:grid-cols-2 gap-8 mb-8">
+
+  <div class="chart-card">
+    <h2 class="chart-title">Seniority Breakdown</h2>
+    <div id="chartSeniority" class="h-80"></div>
+  </div>
+
+  <div class="chart-card">
+    <h2 class="chart-title">Salary by Seniority Level</h2>
+    <div id="chartSalarySeniority" class="h-80"></div>
+  </div>
+
+</div>
+
+<div class="chart-card mb-6">
+  <h2 class="chart-title">Average Base Salary Metrics by Country</h2>
+  <div id="chartSalary" class="h-72"></div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+const paperBg = 'rgba(0,0,0,0)';
+const plotBg  = 'rgba(0,0,0,0)';
+const textCol = '#C9D1D9';
+const gridCol = '#21262D';
+
+// 1. Skill Demand Ranking Chart (chartTrends)
+(function(){
+  const trendsData = {{ trends_json | safe }};
+  if (!trendsData || !trendsData.length) return;
+  
+  trendsData.sort((a, b) => a.job_count - b.job_count);
+  
+  const colors = trendsData.map(s => ({
+    language: '#00BFA5',
+    ml: '#FFD600',
+    nlp: '#f472b6',
+    genai: '#38bdf8',
+    cloud: '#a78bfa',
+    data: '#4ade80'
+  }[s.category] || '#00BFA5'));
+
+  Plotly.newPlot('chartTrends', [{
+    type: 'bar',
+    orientation: 'h',
+    x: trendsData.map(s => s.job_count),
+    y: trendsData.map(s => s.name),
+    marker: { color: colors, opacity: 0.9 },
+    hovertemplate: '<b>%{y}</b><br>%{x} jobs<extra></extra>',
+  }], {
+    paper_bgcolor: paperBg, plot_bgcolor: plotBg,
+    margin: {l: 110, r: 20, t: 10, b: 40},
+    xaxis: { color: textCol, gridcolor: gridCol, zeroline: false },
+    yaxis: { color: textCol, automargin: true },
+    font: { family: 'Poppins, Inter', color: textCol, size: 11 },
+    hoverlabel: { bgcolor: '#0D1117', bordercolor: '#00BFA5', font: { color: textCol } },
+  }, {responsive: true, displayModeBar: false});
+})();
+
+// 2. Job Clusters Chart (chartClusters)
+(function(){
+  const clustersData = {{ clusters_json | safe }};
+  if (!clustersData || !clustersData.scatter) return;
+  
+  const groups = {};
+  clustersData.scatter.forEach(pt => {
+    const label = pt.cluster || 'Unknown';
+    if (!groups[label]) {
+      groups[label] = { x: [], y: [], text: [], type: 'scatter', mode: 'markers', name: label };
+    }
+    groups[label].x.push(pt.x);
+    groups[label].y.push(pt.y);
+    groups[label].text.push(pt.title);
+  });
+  
+  const traces = Object.values(groups);
+  const colorPalette = ['#00BFA5', '#FFD600', '#38bdf8', '#f472b6', '#a78bfa'];
+  
+  traces.forEach((trace, idx) => {
+    trace.marker = {
+      size: 7, opacity: 0.75,
+      color: colorPalette[idx % colorPalette.length],
+      line: { color: '#0D1117', width: 1 }
+    };
+    trace.hovertemplate = '<b>%{text}</b><br>Cluster: ' + trace.name + '<extra></extra>';
+  });
+
+  Plotly.newPlot('chartClusters', traces, {
+    paper_bgcolor: paperBg, plot_bgcolor: plotBg,
+    margin: {l: 30, r: 20, t: 10, b: 40},
+    xaxis: { color: textCol, gridcolor: gridCol, zeroline: false, showticklabels: false },
+    yaxis: { color: textCol, gridcolor: gridCol, zeroline: false, showticklabels: false },
+    legend: { font: { color: textCol, size: 10 }, orientation: 'h', y: -0.15 },
+    font: { family: 'Poppins, Inter', color: textCol },
+    hoverlabel: { bgcolor: '#0D1117', font: { color: textCol } },
+  }, {responsive: true, displayModeBar: false});
+})();
+
+// 3. Skill Co-occurrence Heatmap (chartCooc)
+(function(){
+  const coocData = {{ cooc_json | safe }};
+  if (!coocData || !coocData.skills) return;
+
+  Plotly.newPlot('chartCooc', [{
+    z: coocData.matrix, x: coocData.skills, y: coocData.skills,
+    type: 'heatmap',
+    colorscale: [[0, '#161B22'], [0.2, '#0d2d2a'], [0.6, '#00BFA5'], [1, '#FFD600']],
+    showscale: true,
+    colorbar: { tickfont: { color: textCol, size: 10 } },
+    hovertemplate: '<b>%{x}</b> + <b>%{y}</b>: %{z} co-occurrences<extra></extra>'
+  }], {
+    paper_bgcolor: paperBg, plot_bgcolor: plotBg,
+    margin: {l: 90, r: 10, t: 10, b: 90},
+    xaxis: { color: textCol, tickangle: -45, gridcolor: gridCol },
+    yaxis: { color: textCol, gridcolor: gridCol },
+    font: { family: 'Poppins, Inter', color: textCol },
+    hoverlabel: { bgcolor: '#0D1117', font: { color: textCol } }
+  }, {responsive: true, displayModeBar: false});
+})();
+
+// 4. Seniority Breakdown Donut Chart (chartSeniority) — NEW
+(function(){
+  const senData = {{ seniority_json | safe }};
+  if (!senData || !senData.length) return;
+
+  const colorMap = { junior: '#38bdf8', mid: '#00BFA5', senior: '#FFD600', lead: '#a78bfa' };
+
+  Plotly.newPlot('chartSeniority', [{
+    type: 'pie', hole: 0.6,
+    labels: senData.map(d => d.seniority),
+    values: senData.map(d => d.count),
+    marker: { colors: senData.map(d => colorMap[d.seniority] || '#8B949E') },
+    textinfo: 'percent+label',
+    textfont: { size: 11 },
+    hovertemplate: '<b>%{label}</b><br>%{value} jobs (%{percent})<extra></extra>',
+  }], {
+    paper_bgcolor: paperBg, plot_bgcolor: plotBg,
+    margin: {l: 10, r: 10, t: 10, b: 10},
+    legend: { font: { color: textCol, size: 11 }, orientation: 'h', y: -0.1 },
+    font: { family: 'Poppins, Inter', color: textCol },
+    hoverlabel: { bgcolor: '#0D1117', font: { color: textCol } },
+  }, {responsive: true, displayModeBar: false});
+})();
+
+// 5. Salary by Seniority Grouped Bar Chart (chartSalarySeniority) — NEW
+(function(){
+  const salSenData = {{ salary_seniority_json | safe }};
+  if (!salSenData || !salSenData.length) return;
+
+  // Order seniority levels logically
+  const order = ['junior', 'mid', 'senior', 'lead'];
+  salSenData.sort((a, b) => order.indexOf(a.seniority) - order.indexOf(b.seniority));
+
+  Plotly.newPlot('chartSalarySeniority', [
+    {
+      x: salSenData.map(d => d.seniority),
+      y: salSenData.map(d => d.avg_min),
+      name: 'Avg Min Salary',
+      type: 'bar',
+      marker: { color: '#00BFA5', opacity: 0.85 }
+    },
+    {
+      x: salSenData.map(d => d.seniority),
+      y: salSenData.map(d => d.avg_max),
+      name: 'Avg Max Salary',
+      type: 'bar',
+      marker: { color: '#FFD600', opacity: 0.85 }
+    }
+  ], {
+    paper_bgcolor: paperBg, plot_bgcolor: plotBg,
+    barmode: 'group',
+    margin: {l: 60, r: 20, t: 30, b: 50},
+    xaxis: { color: textCol, gridcolor: gridCol },
+    yaxis: { color: textCol, gridcolor: gridCol },
+    legend: { font: { color: textCol, size: 10 }, orientation: 'h', y: -0.2 },
+    font: { family: 'Poppins, Inter', color: textCol },
+    hoverlabel: { bgcolor: '#0D1117', font: { color: textCol } }
+  }, {responsive: true, displayModeBar: false});
+})();
+
+// 6. Average Base Salary Metrics by Country (chartSalary)
+(function(){
+  const salaryData = {{ salary_json | safe }};
+  if (!salaryData || !salaryData.length) return;
+
+  Plotly.newPlot('chartSalary', [
+    {
+      x: salaryData.map(d => d.country),
+      y: salaryData.map(d => d.avg_min),
+      name: 'Avg Min Salary (£)',
+      type: 'bar',
+      marker: { color: '#00BFA5', opacity: 0.85 }
+    },
+    {
+      x: salaryData.map(d => d.country),
+      y: salaryData.map(d => d.avg_max),
+      name: 'Avg Max Salary (£)',
+      type: 'bar',
+      marker: { color: '#FFD600', opacity: 0.85 }
+    }
+  ], {
+    paper_bgcolor: paperBg, plot_bgcolor: plotBg,
+    barmode: 'group',
+    margin: {l: 60, r: 20, t: 30, b: 50},
+    xaxis: { color: textCol, gridcolor: gridCol },
+    yaxis: { color: textCol, gridcolor: gridCol },
+    legend: { font: { color: textCol, size: 10 }, orientation: 'h', y: -0.2 },
+    font: { family: 'Poppins, Inter', color: textCol },
+    hoverlabel: { bgcolor: '#0D1117', font: { color: textCol } }
+  }, {responsive: true, displayModeBar: false});
+})();
+</script>
+{% endblock %}

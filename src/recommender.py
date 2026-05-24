@@ -37,10 +37,11 @@ def recommend(
     top_n: int = 5,
     country_filter: str | None = None,   # None = all countries
     job_type_filter: str | None = None,  # None = all types (remote/onsite/hybrid)
+    contract_type_filter: str | None = None,
+    seniority_filter: str | None = None,
 ) -> pd.DataFrame:
     """
-    Recommend top_n jobs matching user_skills.
-    country_filter and job_type_filter are ready for the country toggle feature.
+    Recommend top_n jobs matching user_skills with filters.
     """
     pivot, job_ids, skill_names = load_job_skill_matrix()
     if pivot.empty:
@@ -55,8 +56,8 @@ def recommend(
     if user_vec.sum() == 0:
         return pd.DataFrame(columns=['title', 'company', 'location', 'job_type', 'match_score', 'source_url'])
 
-    # Fit KNN
-    knn = NearestNeighbors(n_neighbors=min(top_n * 3, len(pivot)), metric='cosine')
+    # Fit KNN (grab more neighbors to allow filtering)
+    knn = NearestNeighbors(n_neighbors=min(top_n * 20, len(pivot)), metric='cosine')
     knn.fit(pivot.values)
 
     distances, indices = knn.kneighbors([user_vec])
@@ -68,7 +69,8 @@ def recommend(
     placeholders = ','.join('?' * len(matched_job_ids))
     query = f'''
         SELECT j.id, j.title, co.name AS company, j.location,
-               j.country, j.job_type, j.salary_min, j.salary_max, j.source_url
+               j.country, j.job_type, j.contract_type, j.seniority,
+               j.salary_min, j.salary_max, j.source_url, j.description
         FROM jobs j
         LEFT JOIN companies co ON j.company_id = co.id
         WHERE j.id IN ({placeholders})
@@ -81,13 +83,18 @@ def recommend(
     df['match_score'] = df['id'].map(score_map)
     df = df.sort_values('match_score', ascending=False)
 
-    # Apply filters (country toggle feature — wired in, just needs UI)
-    if country_filter:
+    # Apply filters
+    if country_filter and country_filter != 'all':
         df = df[df['country'].str.lower() == country_filter.lower()]
     if job_type_filter and job_type_filter != 'all':
         df = df[df['job_type'] == job_type_filter]
+    if contract_type_filter and contract_type_filter != 'all':
+        df = df[df['contract_type'] == contract_type_filter]
+    if seniority_filter and seniority_filter != 'all':
+        df = df[df['seniority'] == seniority_filter]
 
-    return df.head(top_n).reset_index(drop=True)
+    res_df = df.head(top_n).reset_index(drop=True)
+    return res_df.where(pd.notnull(res_df), None)
 
 def get_top_skills(limit: int = 20) -> pd.DataFrame:
     conn = get_connection()

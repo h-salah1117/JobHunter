@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="relative bg-[#161B22] border border-slate-800/80 rounded-2xl p-8 mb-12 overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6 shadow-2xl">
+  <div class="z-10 text-center md:text-left">
+    <h1 class="text-3xl font-black text-brand-textLight tracking-tight mb-2">
+      Welcome back, <span class="text-brand-teal">Hazem</span> ✨
+    </h1>
+    <p class="text-sm text-brand-textMuted max-w-xl">
+      Your AI job market metrics are fully operational.
+    </p>
+  </div>
+  <div class="shrink-0 z-10">
+    <a href="/recommend" class="px-6 py-3 rounded-xl bg-brand-teal hover:bg-brand-teal/90 text-brand-dark font-bold text-sm shadow-lg shadow-brand-teal/10 transition-all duration-300 inline-block">
+      🎯 Find Matches
+    </a>
+  </div>
+</div>
+
+<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-6 mb-12">
+  {% set cards = [
+    ('Total Jobs',    stats.total,        '💼'),
+    ('Companies',     stats.companies,    '🏢'),
+    ('Remote Only',   stats.remote,       '🌍'),
+    ('Internships',   stats.internships,  '🎓'),
+    ('Countries',     stats.countries,    '📍'),
+    ('Social Feed',   stats.social_posts, '📢'),
+  ] %}
+  {% for label, value, icon in cards %}
+  <div class="bg-[#161B22] border border-slate-800/80 rounded-2xl p-6 flex flex-col justify-between shadow-xl relative hover:border-brand-teal/40 transition-all duration-300 transform hover:-translate-y-1">
+    <div class="flex items-center justify-between mb-4">
+      <span class="text-2xl">{{ icon }}</span>
+      <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+    </div>
+    <div>
+      <div class="text-3xl font-black text-brand-textLight tracking-tight">{{ value or 0 }}</div>
+      <div class="text-[11px] font-bold text-brand-textMuted uppercase tracking-wider mt-1">{{ label }}</div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="grid lg:grid-cols-3 gap-8 mb-12">
+  <div class="bg-[#161B22] border border-slate-800/80 rounded-2xl p-7 shadow-2xl">
+    <h2 class="text-base font-black text-brand-textLight tracking-wider mb-6 flex items-center gap-2">
+      <span class="w-1.5 h-4 bg-brand-teal rounded-full"></span> Top Skills in Demand
+    </h2>
+    <div id="chartSkills" class="h-80"></div>
+  </div>
+
+  <div class="bg-[#161B22] border border-slate-800/80 rounded-2xl p-7 shadow-2xl">
+    <h2 class="text-base font-black text-brand-textLight tracking-wider mb-6 flex items-center gap-2">
+      <span class="w-1.5 h-4 bg-brand-teal rounded-full"></span> Contract Types
+    </h2>
+    <div id="chartContract" class="h-80"></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const paperBg = 'rgba(0,0,0,0)';
+const plotBg  = 'rgba(0,0,0,0)';
+const textCol = '#C9D1D9';
+const gridCol = '#21262D';
+
+(function(){
+  const skills = {{ top_skills | tojson }};
+  if (!skills.length) return;
+  Plotly.newPlot('chartSkills', [{
+    type: 'bar', orientation: 'h',
+    x: skills.map(s => s.job_count),
+    y: skills.map(s => s.name),
+    marker: {
+      color: skills.map(s => ({
+        language:'#00BFA5', ml:'#FFD600', nlp:'#f472b6',
+        genai:'#38bdf8', cloud:'#a78bfa', data:'#4ade80'
+      }[s.category] || '#00BFA5')),
+      opacity: 0.9,
+    },
+    hovertemplate: '<b>%{y}</b><br>%{x} jobs<extra></extra>',
+  }], {
+    paper_bgcolor: paperBg, plot_bgcolor: plotBg,
+    margin: {l:110, r:20, t:10, b:40},
+    xaxis: { color: textCol, gridcolor: gridCol, zeroline: false },
+    yaxis: { color: textCol, categoryorder: 'total ascending', automargin: true },
+    font: { family: 'Poppins, Inter', color: textCol, size: 12 },
+    hoverlabel: { bgcolor: '#0D1117', bordercolor: '#00BFA5' },
+  }, {responsive: true, displayModeBar: false});
+})();
+
+(function(){
+  const data = {{ contract_breakdown | tojson }};
+  if (!data.length) return;
+  Plotly.newPlot('chartContract', [{
+    type: 'pie', hole: 0.65,
+    labels: data.map(d => d.contract_type),
+    values: data.map(d => d.count),
+    marker: { colors: ['#00BFA5','#FFD600','#38bdf8','#f472b6'] },
+    textinfo: 'percent',
+    hovertemplate: '<b>%{label}</b><br>%{value} jobs (%{percent})<extra></extra>',
+  }], {
+    paper_bgcolor: paperBg, plot_bgcolor: plotBg,
+    margin: {l:10, r:10, t:10, b:10},
+    legend: { font: { color: textCol, size: 11 }, orientation: 'h', y: -0.1 },
+    font: { family: 'Poppins, Inter', color: textCol },
+    hoverlabel: { bgcolor: '#0D1117' },
+  }, {responsive: true, displayModeBar: false});
+})();
+</script>
+{% endblock %}

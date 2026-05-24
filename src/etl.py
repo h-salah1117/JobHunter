@@ -112,6 +112,13 @@ def run_etl():
 
     print(f'[ETL] Done. Skills extracted and saved.')
 
+    # Extract seniority for all jobs that don't have it yet
+    try:
+        from salary_model import update_job_seniority
+        update_job_seniority()
+    except Exception as e:
+        print(f'[ETL] seniority extraction error: {e}')
+
     # Quick stats
     conn2 = get_connection()
     stats = pd.read_sql('''

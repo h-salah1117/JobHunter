@@ -1,84 +1,30 @@
-\# Job Market AI — MVP
+﻿---
+title: JobHunter
+emoji: 🎯
+colorFrom: indigo
+colorTo: purple
+sdk: docker
+app_port: 7860
+pinned: false
+short_description: AI-powered job aggregator, recommender & career coach
+---
 
+# JobHunter 🎯
 
+An AI-powered job hunting platform that scrapes, recommends, and helps you land your next data science role.
 
-A smart job market intelligence platform with NLP-powered skill extraction and job recommendations.
+## Features
+- 🔍 Live job listings from Adzuna, Wuzzuf & JobSpy
+- 🤖 AI job recommender (KNN + TF-IDF skill matching)
+- 📄 CV upload & ATS scoring with LLM feedback
+- 💬 RAG-powered career coach chatbot (Qwen 2.5)
+- 📊 Analytics dashboard with 7 Plotly charts
+- 🌐 Bilingual English / Arabic interface
 
-
-
-\## Project structure
-
-
-
-```
-
-job\_market\_ai/
-
-├── data/
-
-│   └── jobs.db              # SQLite database (auto-created)
-
-├── src/
-
-│   ├── pipeline.py          # Data collection from Adzuna API
-
-│   ├── etl.py               # Cleaning + skill extraction
-
-│   ├── recommender.py       # KNN-based job recommender
-
-│   └── database.py          # DB helpers
-
-├── app.py                   # Streamlit UI
-
-├── requirements.txt
-
-└── .env.example
-
-```
-
-
-
-\## Setup
-
-
-
-```bash
-
-pip install -r requirements.txt
-
-cp .env.example .env
-
-\# Add your Adzuna API keys to .env
-
-streamlit run app.py
-
-```
-
-
-
-\## Feature roadmap
-
-
-
-\- \[x] Adzuna API data collection
-
-\- \[x] ETL pipeline (clean, normalize, extract skills)
-
-\- \[x] SQLite storage
-
-\- \[x] TF-IDF skill extraction
-
-\- \[x] KNN job recommender
-
-\- \[x] Streamlit dashboard
-
-\- \[ ] Country filter toggle (local vs remote jobs) — \*planned\*
-
-\- \[ ] Salary prediction model
-
-\- \[ ] RAG career assistant
-
-\- \[ ] CV analyzer + ATS score
-
-\- \[ ] Power BI dashboard export
-
+## Setup (HF Spaces Secrets)
+Set these in your Space Settings → Variables and Secrets:
+- `ADZUNA_APP_ID` — Adzuna API ID
+- `ADZUNA_APP_KEY` — Adzuna API Key
+- `HF_TOKEN` — HuggingFace token (for serverless LLM)
+- `SECRET_KEY` — Random secret string for Flask sessions
+- `SCRAPER_MODE` — Set to `production`

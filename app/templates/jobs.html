@@ -181,16 +181,20 @@
         {%- if current_lang == 'ar' -%}
           {%- if job.summary_ar -%}
             {{ job.summary_ar }}
-          {%- elif job.summary_en -%}
-            {{ job.summary_en }}
           {%- else -%}
-            {{ (job.description or '')[:300] }}
+            <div style="font-size:0.85em;color:var(--text-muted);font-style:italic;margin-bottom:var(--space-2);">
+              ⏳ الملخص بالذكاء الاصطناعي قيد التجهيز... إليك الوصف الأصلي للوظيفة:
+            </div>
+            {{ (job.description or '')[:300] }}...
           {%- endif -%}
         {%- else -%}
           {%- if job.summary_en -%}
             {{ job.summary_en }}
           {%- else -%}
-            {{ (job.description or '')[:300] }}
+            <div style="font-size:0.85em;color:var(--text-muted);font-style:italic;margin-bottom:var(--space-2);">
+              ⏳ AI Summary is being prepared... Here is the original job description:
+            </div>
+            {{ (job.description or '')[:300] }}...
           {%- endif -%}
         {%- endif -%}
       </div>

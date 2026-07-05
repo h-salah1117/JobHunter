@@ -62,9 +62,11 @@ def create_app():
     # Translations Template Context Processor
     @app.context_processor
     def inject_translations():
-        from flask import session
+        from flask import session, request
         from app.translations import TRANSLATIONS
-        lang = session.get('lang', 'en')
+        lang = request.cookies.get('lang', session.get('lang', 'en'))
+        if lang not in ['en', 'ar']:
+            lang = 'en'
         def translate(key):
             return TRANSLATIONS.get(lang, TRANSLATIONS['en']).get(key, key)
 

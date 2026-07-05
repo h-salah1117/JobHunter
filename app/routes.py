@@ -361,7 +361,10 @@ def api_chat():
 # ── Language Switcher ────────────────────────────────────────────────────────
 @main.route('/change-lang/<lang>')
 def change_lang(lang):
-    from flask import redirect, request, url_for, session
+    from flask import redirect, request, url_for, session, make_response
+    response = make_response(redirect(request.referrer or url_for('main.index')))
     if lang in ['en', 'ar']:
         session['lang'] = lang
-    return redirect(request.referrer or url_for('main.index'))
+        # Set a plain cookie for 30 days to persist language across session restarts or secret key regeneration
+        response.set_cookie('lang', lang, max_age=30*24*60*60, path='/')
+    return response

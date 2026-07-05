@@ -300,6 +300,16 @@ def api_stats():
 @main.route('/api/refresh', methods=['POST'])
 def api_refresh():
     msg = trigger_now()
+    
+    # Also trigger an immediate database upload attempt in a background thread to give instant feedback
+    try:
+        from hf_sync import upload_db_to_hf
+        import threading
+        threading.Thread(target=upload_db_to_hf, daemon=True).start()
+    except Exception as e:
+        import logging
+        logging.warning(f"[Routes] Failed to trigger background HF upload: {e}")
+        
     return jsonify({'status': 'ok', 'message': msg})
 
 

@@ -40,6 +40,13 @@ def create_app():
     import logging
     def preload_resources():
         try:
+            # Trigger startup dataset creation and database sync to HF
+            try:
+                from hf_sync import upload_db_to_hf
+                upload_db_to_hf()
+            except Exception as upload_err:
+                logging.warning(f"[HF-Sync] Startup database upload skipped/failed: {upload_err}")
+
             logging.info("[RAG] Background preloading embedding model and ChromaDB client...")
             from src.rag_assistant import _get_embedding_model, get_chroma_client_and_collection, index_new_jobs
             _get_embedding_model()

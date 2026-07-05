@@ -9,28 +9,38 @@ DB_PATH = os.path.join(os.path.dirname(__file__), '..', 'data', 'jobs.db')
 def _get_hf_config():
     """
     Returns (token, repo_id) if configured.
-    Determines repo_id dynamically using SPACE_OWNER or whoami.
+    Determines repo_id dynamically using SPACE_OWNER, SPACE_AUTHOR_NAME, SPACE_ID, or whoami.
     """
     token = os.getenv("HF_TOKEN") or os.getenv("HF_API_TOKEN")
     if not token:
+        logging.info("[HF-Sync] HF_TOKEN is not configured in the environment. Skipping sync.")
         return None, None
 
-    owner = os.getenv("SPACE_OWNER")
+    owner = os.getenv("SPACE_OWNER") or os.getenv("SPACE_AUTHOR_NAME")
+    if not owner and os.getenv("SPACE_ID"):
+        parts = os.getenv("SPACE_ID").split('/')
+        if len(parts) > 0:
+            owner = parts[0]
+            logging.info(f"[HF-Sync] Resolved owner '{owner}' from SPACE_ID env var.")
+
     if not owner:
         # Fallback to fetching username via API
         try:
             api = HfApi()
             user_info = api.whoami(token=token)
             owner = user_info.get("name")
+            logging.info(f"[HF-Sync] Fetched HF username '{owner}' via whoami.")
         except Exception as e:
             logging.warning(f"[HF-Sync] Failed to fetch Hugging Face username: {e}")
             return None, None
 
     if not owner:
+        logging.warning("[HF-Sync] Could not determine repository owner.")
         return None, None
 
     # Construct dataset repo ID
     repo_id = f"{owner}/jobhunter-data"
+    logging.info(f"[HF-Sync] Using Hugging Face dataset repository: {repo_id}")
     return token, repo_id
 
 

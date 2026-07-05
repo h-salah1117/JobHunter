@@ -392,12 +392,14 @@ def summarize_description(description: str) -> tuple[str, str]:
             logging.info(f"[RAG] JSON parse failed: {json_err}. Falling back to regex extraction.")
             # Fallback to regex extraction
             def extract_field_regex(text: str, field: str) -> str:
-                m = re.search(r'"' + field + r'"\s*:\s*"(.*?)"', text, re.DOTALL)
+                # Match: "field": "value" or 'field': 'value' or field: "value"
+                m = re.search(r'[\'"]?' + field + r'[\'"]?\s*:\s*[\'"](.*?)[\'"]', text, re.DOTALL)
                 if m:
                     return m.group(1).replace('\\"', '"').replace('\\n', '\n').strip()
-                m_arr = re.search(r'"' + field + r'"\s*:\s*\[(.*?)\]', text, re.DOTALL)
+                # Check list format with brackets
+                m_arr = re.search(r'[\'"]?' + field + r'[\'"]?\s*:\s*\[(.*?)\]', text, re.DOTALL)
                 if m_arr:
-                    items = re.findall(r'"(.*?)"', m_arr.group(1))
+                    items = re.findall(r'[\'"](.*?)[\'"]', m_arr.group(1))
                     return "\n".join(f"- {i.strip()}" for i in items if i.strip())
                 return ""
             summary_en_val = extract_field_regex(content, "summary_en")
@@ -483,15 +485,15 @@ def analyze_cv_for_ats(cv_text: str) -> dict:
             logging.info(f"[RAG] CV ATS JSON parse failed: {json_err}. Falling back to regex extraction.")
             # Fallback to regex extraction
             def extract_field_regex(text: str, field: str) -> str:
-                m = re.search(r'"' + field + r'"\s*:\s*"(.*?)"', text, re.DOTALL)
+                m = re.search(r'[\'"]?' + field + r'[\'"]?\s*:\s*[\'"](.*?)[\'"]', text, re.DOTALL)
                 if m:
                     return m.group(1).replace('\\"', '"').replace('\\n', '\n').strip()
                 return ""
             summary_en = extract_field_regex(content, "summary_en")
             summary_ar = extract_field_regex(content, "summary_ar")
-            m_arr = re.search(r'"missing_skills"\s*:\s*\[(.*?)\]', content, re.DOTALL)
+            m_arr = re.search(r'[\'"]?missing_skills[\'"]?\s*:\s*\[(.*?)\]', content, re.DOTALL)
             if m_arr:
-                missing_skills = [i.strip() for i in re.findall(r'"(.*?)"', m_arr.group(1)) if i.strip()]
+                missing_skills = [i.strip() for i in re.findall(r'[\'"](.*?)[\'"]', m_arr.group(1)) if i.strip()]
 
         # Merge LLM semantic content into local evaluation results
         local_eval["missing_skills"] = missing_skills if missing_skills else local_eval.get("missing_skills", [])

@@ -106,12 +106,10 @@ def _call_llm_hf(messages, temperature=0.7, max_tokens=600, json_mode=False) -> 
                 do_sample=True if not json_mode else False,
                 temperature=temperature if not json_mode else 0.1,
                 top_p=0.9 if not json_mode else 1.0,
+                return_full_text=False,  # Exclude the input prompt to get clean generated response
             )
-            res = outputs[0]["generated_text"]
-            if "<|im_start|>assistant\n" in res:
-                res = res.split("<|im_start|>assistant\n")[-1]
-            elif "<|start_header_id|>assistant<|end_header_id|>\n\n" in res:
-                res = res.split("<|start_header_id|>assistant<|end_header_id|>\n\n")[-1]
+            res = outputs[0]["generated_text"].strip()
+            # Clean template tokens if they bleed into generated output
             res = res.replace("<|im_end|>", "").replace("<|eot_id|>", "").strip()
             return res
         except Exception as e:
@@ -376,21 +374,40 @@ def summarize_description(description: str) -> tuple[str, str]:
         ]
         content = _call_llm_hf(messages, temperature=0.1, max_tokens=600, json_mode=True)
         
-        # Strip markdown fences if output
-        if "```json" in content:
-            content = content.split("```json")[-1].split("```")[0].strip()
-        elif "```" in content:
-            content = content.split("```")[-1].split("```")[0].strip()
+        # Strip markdown fences and extract raw JSON object using regex
+        import re
+        json_match = re.search(r'\{.*\}', content, re.DOTALL)
+        if json_match:
+            content = json_match.group(0)
             
         import json
-        data = json.loads(content)
-        summary_en_val = data.get("summary_en", "")
+        try:
+            # Clean common malformed JSON issues like trailing commas before parsing
+            clean_content = re.sub(r',\s*\}', '}', content)
+            clean_content = re.sub(r',\s*\]', ']', clean_content)
+            data = json.loads(clean_content)
+            summary_en_val = data.get("summary_en", "")
+            summary_ar_val = data.get("summary_ar", "")
+        except Exception as json_err:
+            logging.info(f"[RAG] JSON parse failed: {json_err}. Falling back to regex extraction.")
+            # Fallback to regex extraction
+            def extract_field_regex(text: str, field: str) -> str:
+                m = re.search(r'"' + field + r'"\s*:\s*"(.*?)"', text, re.DOTALL)
+                if m:
+                    return m.group(1).replace('\\"', '"').replace('\\n', '\n').strip()
+                m_arr = re.search(r'"' + field + r'"\s*:\s*\[(.*?)\]', text, re.DOTALL)
+                if m_arr:
+                    items = re.findall(r'"(.*?)"', m_arr.group(1))
+                    return "\n".join(f"- {i.strip()}" for i in items if i.strip())
+                return ""
+            summary_en_val = extract_field_regex(content, "summary_en")
+            summary_ar_val = extract_field_regex(content, "summary_ar")
+
         if isinstance(summary_en_val, list):
             summary_en = "\n".join(f"- {str(item).strip()}" for item in summary_en_val if str(item).strip())
         else:
             summary_en = str(summary_en_val).strip()
 
-        summary_ar_val = data.get("summary_ar", "")
         if isinstance(summary_ar_val, list):
             summary_ar = "\n".join(f"- {str(item).strip()}" for item in summary_ar_val if str(item).strip())
         else:
@@ -444,19 +461,44 @@ def analyze_cv_for_ats(cv_text: str) -> dict:
     try:
         content = _call_llm_hf(messages, temperature=0.1, max_tokens=600, json_mode=True)
         
-        # Strip markdown fences if output
-        if "```json" in content:
-            content = content.split("```json")[-1].split("```")[0].strip()
-        elif "```" in content:
-            content = content.split("```")[-1].split("```")[0].strip()
+        # Strip markdown fences and extract raw JSON object using regex
+        import re
+        json_match = re.search(r'\{.*\}', content, re.DOTALL)
+        if json_match:
+            content = json_match.group(0)
             
         import json
-        data = json.loads(content)
-        
+        missing_skills = []
+        summary_en = ""
+        summary_ar = ""
+        try:
+            # Clean common malformed JSON issues like trailing commas before parsing
+            clean_content = re.sub(r',\s*\}', '}', content)
+            clean_content = re.sub(r',\s*\]', ']', clean_content)
+            data = json.loads(clean_content)
+            missing_skills = list(data.get("missing_skills", []))
+            summary_en = str(data.get("summary_en", "")).strip()
+            summary_ar = str(data.get("summary_ar", "")).strip()
+        except Exception as json_err:
+            logging.info(f"[RAG] CV ATS JSON parse failed: {json_err}. Falling back to regex extraction.")
+            # Fallback to regex extraction
+            def extract_field_regex(text: str, field: str) -> str:
+                m = re.search(r'"' + field + r'"\s*:\s*"(.*?)"', text, re.DOTALL)
+                if m:
+                    return m.group(1).replace('\\"', '"').replace('\\n', '\n').strip()
+                return ""
+            summary_en = extract_field_regex(content, "summary_en")
+            summary_ar = extract_field_regex(content, "summary_ar")
+            m_arr = re.search(r'"missing_skills"\s*:\s*\[(.*?)\]', content, re.DOTALL)
+            if m_arr:
+                missing_skills = [i.strip() for i in re.findall(r'"(.*?)"', m_arr.group(1)) if i.strip()]
+
         # Merge LLM semantic content into local evaluation results
-        local_eval["missing_skills"] = list(data.get("missing_skills", []))
-        local_eval["summary_en"] = str(data.get("summary_en", "Professional profile summary loaded.")).strip()
-        local_eval["summary_ar"] = str(data.get("summary_ar", "تم تجهيز ملخص الملف الشخصي بنجاح.")).strip()
+        local_eval["missing_skills"] = missing_skills if missing_skills else local_eval.get("missing_skills", [])
+        if summary_en:
+            local_eval["summary_en"] = summary_en
+        if summary_ar:
+            local_eval["summary_ar"] = summary_ar
         
         return local_eval
     except Exception as e:

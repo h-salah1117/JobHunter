@@ -2,8 +2,24 @@
 <html lang="{{ current_lang }}" class="dark" {% if current_lang == 'ar' %}dir="rtl"{% endif %}>
 <head>
   <script>
+    window.safeStorage = {
+      getItem: function(key) {
+        try {
+          return localStorage.getItem(key);
+        } catch (e) {
+          return null;
+        }
+      },
+      setItem: function(key, value) {
+        try {
+          localStorage.setItem(key, value);
+        } catch (e) {
+          // do nothing
+        }
+      }
+    };
     (function() {
-      var s = localStorage.getItem('theme');
+      var s = window.safeStorage.getItem('theme');
       if (s === 'light') {
         document.documentElement.classList.remove('dark');
         document.documentElement.classList.add('light');
@@ -142,11 +158,11 @@
       if (isLight) {
         html.classList.remove('light');
         html.classList.add('dark');
-        localStorage.setItem('theme', 'dark');
+        window.safeStorage.setItem('theme', 'dark');
       } else {
         html.classList.remove('dark');
         html.classList.add('light');
-        localStorage.setItem('theme', 'light');
+        window.safeStorage.setItem('theme', 'light');
       }
       updateThemeIcon();
       window.dispatchEvent(new Event('themeChanged'));
@@ -276,14 +292,14 @@
 
     // Client-side language storage and synchronization (iframe & cookie bypass)
     function changeLanguage(lang) {
-      localStorage.setItem('lang', lang);
+      window.safeStorage.setItem('lang', lang);
       const url = new URL(window.location.href);
       url.searchParams.set('lang', lang);
       window.location.href = url.toString();
     }
 
     (function() {
-      const savedLang = localStorage.getItem('lang');
+      const savedLang = window.safeStorage.getItem('lang');
       const currentLang = "{{ current_lang }}";
       const urlParams = new URLSearchParams(window.location.search);
       const urlLang = urlParams.get('lang');
@@ -291,7 +307,7 @@
       // If lang parameter is present, save it to localStorage
       if (urlLang && (urlLang === 'en' || urlLang === 'ar')) {
         if (savedLang !== urlLang) {
-          localStorage.setItem('lang', urlLang);
+          window.safeStorage.setItem('lang', urlLang);
         }
       } else if (savedLang && savedLang !== currentLang) {
         // If saved lang doesn't match rendered lang, redirect to sync with parameter

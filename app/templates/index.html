@@ -1,0 +1,387 @@
+{% extends "base.html" %}
+{% block title %}{{ t('nav_dashboard') }}{% endblock %}
+
+{% block head %}
+<script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+
+  <!-- ── Hero Section ──────────────────────────────────────────────────── -->
+  <section id="hero" style="padding: var(--space-10) 0 var(--space-8);">
+    <div class="flex flex-col gap-4">
+      <h1 class="text-display">{{ t('db_title') }}</h1>
+      <p class="text-body" style="max-width: 640px;">{{ t('db_subtitle') }}</p>
+      <div class="flex gap-4 items-center" style="margin-top: var(--space-2);">
+        <a href="/recommend" class="btn btn-primary btn-lg">{{ t('find_matches') }}</a>
+        <button class="btn btn-secondary" onclick="triggerRefresh(this)" aria-label="{{ t('btn_refresh') }}">
+          🔄 {{ t('btn_refresh') }}
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── KPI Cards Grid ────────────────────────────────────────────────── -->
+  <section id="kpis" style="padding-bottom: var(--space-10);">
+    <div class="grid grid-3" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+      {% set kpis = [
+        ('💼', t('kpi_total'),       stats.total | default(0)),
+        ('🌍', t('kpi_remote'),      stats.remote | default(0)),
+        ('🎓', t('kpi_internships'), stats.internships | default(0)),
+        ('🏢', t('kpi_companies'),   stats.companies | default(0)),
+        ('📍', t('kpi_countries'),   stats.countries | default(0)),
+        ('🕒', t('kpi_last_sync'),   last_run[:16] if last_run else '—'),
+      ] %}
+      {% for icon, label, value in kpis %}
+      <div class="kpi-card stagger-in" aria-label="{{ label }}">
+        <div class="kpi-icon">{{ icon }}</div>
+        <div class="kpi-value">{{ value }}</div>
+        <div class="kpi-label">{{ label }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <!-- ── Analytics Charts Section ──────────────────────────────────────── -->
+  <section id="analytics" style="padding-bottom: var(--space-10);">
+    <div class="flex flex-col gap-3" style="margin-bottom: var(--space-8);">
+      <p class="section-label">{{ t('nav_analytics') }}</p>
+      <h2 class="text-h2">{{ t('an_title') }}</h2>
+      <p class="text-body">{{ t('an_subtitle') }}</p>
+    </div>
+
+    <!-- Row 1: Top Skills + Contract Type -->
+    <div class="grid grid-2" style="margin-bottom: var(--space-6);">
+      <div class="chart-card">
+        <h3 class="chart-title">{{ t('chart_top_skills') }}</h3>
+        <div id="chartSkills" style="height: 320px;"></div>
+      </div>
+      <div class="chart-card">
+        <h3 class="chart-title">{{ t('chart_contract_type') }}</h3>
+        <div id="chartContract" style="height: 320px;"></div>
+      </div>
+    </div>
+
+    <!-- Row 2: Word Cloud + Skill Demand Ranking -->
+    <div class="grid grid-2" style="margin-bottom: var(--space-6);">
+      <div class="chart-card">
+        <h3 class="chart-title">{{ t('card_wordcloud') }}</h3>
+        <div style="min-height: 280px; display: flex; align-items: center; justify-content: center;">
+          {% if wordcloud_b64 %}
+          <img src="data:image/png;base64,{{ wordcloud_b64 }}"
+               alt="{{ t('card_wordcloud') }}"
+               style="width: 100%; height: auto; border-radius: var(--radius-md);" />
+          {% else %}
+          <div style="text-align: center;">
+            <p style="font-size: 2rem; margin-bottom: var(--space-2);">📊</p>
+            <p class="text-muted text-sm">{{ t('err_no_pipeline_data') }}</p>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      <div class="chart-card">
+        <h3 class="chart-title">{{ t('card_trends') }}</h3>
+        <div id="chartTrends" style="height: 320px;"></div>
+      </div>
+    </div>
+
+    <!-- Row 3: Clusters + Co-occurrence Heatmap -->
+    <div class="grid grid-2" style="margin-bottom: var(--space-6);">
+      <div class="chart-card">
+        <h3 class="chart-title">{{ t('card_clusters') }}</h3>
+        <div id="chartClusters" style="height: 320px;"></div>
+      </div>
+      <div class="chart-card">
+        <h3 class="chart-title">{{ t('card_cooc') }}</h3>
+        <div id="chartCooc" style="height: 320px;"></div>
+      </div>
+    </div>
+
+    <!-- Row 4: Seniority Breakdown + Salary by Seniority -->
+    <div class="grid grid-2" style="margin-bottom: var(--space-6);">
+      <div class="chart-card">
+        <h3 class="chart-title">{{ t('card_seniority') }}</h3>
+        <div id="chartSeniority" style="height: 320px;"></div>
+      </div>
+      <div class="chart-card">
+        <h3 class="chart-title">{{ t('card_sal_seniority') }}</h3>
+        <div id="chartSalarySeniority" style="height: 320px;"></div>
+      </div>
+    </div>
+
+    <!-- Row 5: Salary by Country (full width) -->
+    <div style="margin-bottom: var(--space-6);">
+      <div class="chart-card">
+        <h3 class="chart-title">{{ t('card_sal_country') }}</h3>
+        <div id="chartSalary" style="height: 300px;"></div>
+      </div>
+    </div>
+  </section>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function() {
+  // ── Theme-aware color helpers ────────────────────────────────────────
+  function getColors() {
+    const isLight = document.documentElement.classList.contains('light');
+    return {
+      text:  isLight ? '#1A1D2B' : '#E8E9ED',
+      grid:  isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.06)',
+      paper: 'rgba(0,0,0,0)',
+      plot:  'rgba(0,0,0,0)',
+      hover: isLight ? '#FFFFFF' : '#0D1117',
+    };
+  }
+
+  function baseLayout(c) {
+    return {
+      paper_bgcolor: c.paper,
+      plot_bgcolor:  c.plot,
+      font: { family: 'Inter, DM Sans, sans-serif', color: c.text, size: 11 },
+      hoverlabel: { bgcolor: c.hover, bordercolor: 'var(--accent)', font: { color: c.text } },
+    };
+  }
+
+  const c = getColors();
+  const PALETTE = ['#00D4AA', '#F59E0B', '#3B82F6', '#EF4444', '#8B5CF6', '#22C55E', '#f472b6', '#f97316'];
+
+  // ── 1. Top Skills Bar Chart ──────────────────────────────────────────
+  (function() {
+    const skills = {{ top_skills | tojson }};
+    if (!skills || !skills.length) return;
+
+    const catColors = {
+      language: '#00D4AA', ml: '#F59E0B', nlp: '#f472b6',
+      genai: '#3B82F6', cloud: '#8B5CF6', data: '#22C55E',
+      bi: '#fbbf24', devops: '#f97316', soft: '#9CA0B0'
+    };
+
+    Plotly.newPlot('chartSkills', [{
+      type: 'bar', orientation: 'h',
+      x: skills.map(s => s.job_count),
+      y: skills.map(s => s.name),
+      marker: {
+        color: skills.map(s => catColors[s.category] || '#00D4AA'),
+        opacity: 0.9,
+      },
+      hovertemplate: '<b>%{y}</b><br>%{x} jobs<extra></extra>',
+    }], Object.assign({}, baseLayout(c), {
+      margin: { l: 100, r: 16, t: 10, b: 30 },
+      xaxis: { color: c.text, gridcolor: c.grid, zeroline: false },
+      yaxis: { color: c.text, categoryorder: 'total ascending', automargin: true },
+    }), { responsive: true, displayModeBar: false });
+  })();
+
+  // ── 2. Contract Type Pie Chart ───────────────────────────────────────
+  (function() {
+    const data = {{ contract_breakdown | tojson }};
+    if (!data || !data.length) return;
+
+    Plotly.newPlot('chartContract', [{
+      type: 'pie', hole: 0.6,
+      labels: data.map(d => d.contract_type),
+      values: data.map(d => d.count),
+      marker: { colors: PALETTE },
+      textinfo: 'percent+label',
+      textfont: { size: 11 },
+      hovertemplate: '<b>%{label}</b><br>%{value} jobs (%{percent})<extra></extra>',
+    }], Object.assign({}, baseLayout(c), {
+      margin: { l: 10, r: 10, t: 10, b: 10 },
+      legend: { font: { color: c.text, size: 10 }, orientation: 'h', y: -0.15 },
+    }), { responsive: true, displayModeBar: false });
+  })();
+
+  // ── 3. Skill Demand Ranking (Trends) ─────────────────────────────────
+  (function() {
+    const trendsData = {{ trends_json | safe }};
+    if (!trendsData || !trendsData.length) return;
+
+    trendsData.sort((a, b) => a.job_count - b.job_count);
+
+    const catColors = {
+      language: '#00D4AA', ml: '#F59E0B', nlp: '#f472b6',
+      genai: '#3B82F6', cloud: '#8B5CF6', data: '#22C55E',
+      bi: '#fbbf24', devops: '#f97316', soft: '#9CA0B0'
+    };
+
+    Plotly.newPlot('chartTrends', [{
+      type: 'bar', orientation: 'h',
+      x: trendsData.map(s => s.job_count),
+      y: trendsData.map(s => s.name),
+      marker: { color: trendsData.map(s => catColors[s.category] || '#00D4AA'), opacity: 0.9 },
+      hovertemplate: '<b>%{y}</b><br>%{x} jobs<extra></extra>',
+    }], Object.assign({}, baseLayout(c), {
+      margin: { l: 110, r: 16, t: 10, b: 40 },
+      xaxis: { color: c.text, gridcolor: c.grid, zeroline: false },
+      yaxis: { color: c.text, automargin: true },
+    }), { responsive: true, displayModeBar: false });
+  })();
+
+  // ── 4. Job Clusters Scatter ──────────────────────────────────────────
+  (function() {
+    const clustersData = {{ clusters_json | safe }};
+    if (!clustersData || !clustersData.scatter) return;
+
+    const groups = {};
+    clustersData.scatter.forEach(pt => {
+      const label = pt.cluster || 'Unknown';
+      if (!groups[label]) {
+        groups[label] = { x: [], y: [], text: [], type: 'scatter', mode: 'markers', name: label };
+      }
+      groups[label].x.push(pt.x);
+      groups[label].y.push(pt.y);
+      groups[label].text.push(pt.title);
+    });
+
+    const traces = Object.values(groups);
+    traces.forEach((trace, idx) => {
+      trace.marker = {
+        size: 7, opacity: 0.75,
+        color: PALETTE[idx % PALETTE.length],
+        line: { color: c.plot === 'rgba(0,0,0,0)' ? '#0B0D13' : '#FFFFFF', width: 1 }
+      };
+      trace.hovertemplate = '<b>%{text}</b><br>Cluster: ' + trace.name + '<extra></extra>';
+    });
+
+    Plotly.newPlot('chartClusters', traces, Object.assign({}, baseLayout(c), {
+      margin: { l: 30, r: 16, t: 10, b: 40 },
+      xaxis: { color: c.text, gridcolor: c.grid, zeroline: false, showticklabels: false },
+      yaxis: { color: c.text, gridcolor: c.grid, zeroline: false, showticklabels: false },
+      legend: { font: { color: c.text, size: 10 }, orientation: 'h', y: -0.15 },
+    }), { responsive: true, displayModeBar: false });
+  })();
+
+  // ── 5. Skill Co-occurrence Heatmap ───────────────────────────────────
+  (function() {
+    const coocData = {{ cooc_json | safe }};
+    if (!coocData || !coocData.skills) return;
+
+    Plotly.newPlot('chartCooc', [{
+      z: coocData.matrix, x: coocData.skills, y: coocData.skills,
+      type: 'heatmap',
+      colorscale: [[0, '#12141C'], [0.25, '#0d3d35'], [0.6, '#00D4AA'], [1, '#F59E0B']],
+      showscale: true,
+      colorbar: { tickfont: { color: c.text, size: 10 } },
+      hovertemplate: '<b>%{x}</b> + <b>%{y}</b>: %{z} co-occurrences<extra></extra>',
+    }], Object.assign({}, baseLayout(c), {
+      margin: { l: 90, r: 10, t: 10, b: 90 },
+      xaxis: { color: c.text, tickangle: -45, gridcolor: c.grid },
+      yaxis: { color: c.text, gridcolor: c.grid },
+    }), { responsive: true, displayModeBar: false });
+  })();
+
+  // ── 6. Seniority Breakdown Donut ─────────────────────────────────────
+  (function() {
+    const senData = {{ seniority_json | safe }};
+    if (!senData || !senData.length) return;
+
+    const colorMap = { junior: '#3B82F6', mid: '#00D4AA', senior: '#F59E0B', lead: '#8B5CF6' };
+
+    Plotly.newPlot('chartSeniority', [{
+      type: 'pie', hole: 0.6,
+      labels: senData.map(d => d.seniority),
+      values: senData.map(d => d.count),
+      marker: { colors: senData.map(d => colorMap[d.seniority] || '#9CA0B0') },
+      textinfo: 'percent+label',
+      textfont: { size: 11 },
+      hovertemplate: '<b>%{label}</b><br>%{value} jobs (%{percent})<extra></extra>',
+    }], Object.assign({}, baseLayout(c), {
+      margin: { l: 10, r: 10, t: 10, b: 10 },
+      legend: { font: { color: c.text, size: 10 }, orientation: 'h', y: -0.15 },
+    }), { responsive: true, displayModeBar: false });
+  })();
+
+  // ── 7. Salary by Seniority Grouped Bar ───────────────────────────────
+  (function() {
+    const salSenData = {{ salary_seniority_json | safe }};
+    if (!salSenData || !salSenData.length) return;
+
+    const order = ['junior', 'mid', 'senior', 'lead'];
+    salSenData.sort((a, b) => order.indexOf(a.seniority) - order.indexOf(b.seniority));
+
+    Plotly.newPlot('chartSalarySeniority', [
+      {
+        x: salSenData.map(d => d.seniority),
+        y: salSenData.map(d => d.avg_min),
+        name: 'Avg Min',
+        type: 'bar',
+        marker: { color: '#00D4AA', opacity: 0.85 }
+      },
+      {
+        x: salSenData.map(d => d.seniority),
+        y: salSenData.map(d => d.avg_max),
+        name: 'Avg Max',
+        type: 'bar',
+        marker: { color: '#F59E0B', opacity: 0.85 }
+      }
+    ], Object.assign({}, baseLayout(c), {
+      barmode: 'group',
+      margin: { l: 60, r: 16, t: 20, b: 50 },
+      xaxis: { color: c.text, gridcolor: c.grid },
+      yaxis: { color: c.text, gridcolor: c.grid },
+      legend: { font: { color: c.text, size: 10 }, orientation: 'h', y: -0.2 },
+    }), { responsive: true, displayModeBar: false });
+  })();
+
+  // ── 8. Average Salary by Country ─────────────────────────────────────
+  (function() {
+    const salaryData = {{ salary_json | safe }};
+    if (!salaryData || !salaryData.length) return;
+
+    Plotly.newPlot('chartSalary', [
+      {
+        x: salaryData.map(d => d.country),
+        y: salaryData.map(d => d.avg_min),
+        name: 'Avg Min (£)',
+        type: 'bar',
+        marker: { color: '#00D4AA', opacity: 0.85 }
+      },
+      {
+        x: salaryData.map(d => d.country),
+        y: salaryData.map(d => d.avg_max),
+        name: 'Avg Max (£)',
+        type: 'bar',
+        marker: { color: '#F59E0B', opacity: 0.85 }
+      }
+    ], Object.assign({}, baseLayout(c), {
+      barmode: 'group',
+      margin: { l: 60, r: 16, t: 20, b: 50 },
+      xaxis: { color: c.text, gridcolor: c.grid },
+      yaxis: { color: c.text, gridcolor: c.grid },
+      legend: { font: { color: c.text, size: 10 }, orientation: 'h', y: -0.2 },
+    }), { responsive: true, displayModeBar: false });
+  })();
+
+  // ── Theme Change Listener ────────────────────────────────────────────
+  window.addEventListener('themeChanged', function() {
+    const nc = getColors();
+
+    const chartIds = [
+      'chartSkills', 'chartContract', 'chartTrends', 'chartClusters',
+      'chartCooc', 'chartSeniority', 'chartSalarySeniority', 'chartSalary'
+    ];
+
+    const axisUpdate = {
+      'xaxis.color': nc.text,
+      'xaxis.gridcolor': nc.grid,
+      'yaxis.color': nc.text,
+      'yaxis.gridcolor': nc.grid,
+      'font.color': nc.text,
+      'legend.font.color': nc.text,
+    };
+
+    chartIds.forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el && el.data) {
+        Plotly.relayout(id, axisUpdate);
+      }
+    });
+  });
+
+})();
+</script>
+{% endblock %}

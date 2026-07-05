@@ -1,0 +1,28 @@
+# Environments
+.env
+.venv/
+venv/
+env/
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Database & binary model files (auto-generated on first run)
+data/*.db*
+data/chroma_db/
+data/analytics_cache.json
+models/
+
+# Local Generated files
+JobHunter_Codebase.md
+Gemini_Generated_Image_*.png
+
+# System & IDEs
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+scratch/

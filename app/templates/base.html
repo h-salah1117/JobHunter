@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="{{ current_lang }}" class="dark" {% if current_lang == 'ar' %}dir="rtl"{% endif %}>
+<head>
+  <script>
+    (function() {
+      var s = localStorage.getItem('theme');
+      if (s === 'light') {
+        document.documentElement.classList.remove('dark');
+        document.documentElement.classList.add('light');
+      }
+    })();
+  </script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="AI-powered job market intelligence platform with NLP skill extraction and salary analytics." />
+  <title>{% block title %}JobHunter{% endblock %} — AI Job Intelligence</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Sans:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  {% block head %}{% endblock %}
+</head>
+
+<body>
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+
+  <!-- ═══ NAVIGATION ═══ -->
+  <nav class="nav" role="navigation" aria-label="Main navigation">
+    <div class="nav-inner">
+      <!-- Brand -->
+      <a href="/" class="nav-brand">
+        <div class="nav-brand-icon" aria-hidden="true">JH</div>
+        <span>{{ t('brand_name') }}</span>
+      </a>
+
+      <!-- Desktop Links -->
+      <ul class="nav-links" role="menubar">
+        <li><a href="/" class="nav-link {% if request.path == '/' %}active{% endif %}" role="menuitem">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+          {{ t('nav_dashboard') }}
+        </a></li>
+        <li><a href="/jobs" class="nav-link {% if request.path == '/jobs' %}active{% endif %}" role="menuitem">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+          {{ t('nav_jobs') }}
+        </a></li>
+        <li><a href="/recommend" class="nav-link {% if request.path == '/recommend' %}active{% endif %}" role="menuitem">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          {{ t('nav_recommend') }}
+        </a></li>
+      </ul>
+
+      <!-- Actions -->
+      <div class="nav-actions">
+        <!-- Language Switcher -->
+        {% if current_lang == 'ar' %}
+        <a href="/change-lang/en" class="icon-btn" aria-label="Switch to English" title="English">EN</a>
+        {% else %}
+        <a href="/change-lang/ar" class="icon-btn" aria-label="التبديل للعربية" title="عربي">ع</a>
+        {% endif %}
+
+        <!-- Theme Toggle -->
+        <button id="themeToggle" class="icon-btn" onclick="toggleTheme()" aria-label="Toggle dark/light mode">
+          <svg id="themeIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </button>
+
+        <!-- Hamburger (mobile) -->
+        <button class="hamburger" id="hamburgerBtn" onclick="toggleMobileMenu()" aria-label="Toggle navigation menu" aria-expanded="false">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Mobile Menu -->
+  <div class="mobile-menu" id="mobileMenu" role="navigation" aria-label="Mobile navigation">
+    <a href="/" class="nav-link {% if request.path == '/' %}active{% endif %}">{{ t('nav_dashboard') }}</a>
+    <a href="/jobs" class="nav-link {% if request.path == '/jobs' %}active{% endif %}">{{ t('nav_jobs') }}</a>
+    <a href="/recommend" class="nav-link {% if request.path == '/recommend' %}active{% endif %}">{{ t('nav_recommend') }}</a>
+  </div>
+
+  <!-- ═══ MAIN CONTENT ═══ -->
+  <main id="main-content" class="page-content">
+    <div class="container">
+      {% block content %}{% endblock %}
+    </div>
+  </main>
+
+  <!-- ═══ FOOTER ═══ -->
+  <footer class="footer">
+    <div class="container">
+      {{ t('footer_text') }}
+    </div>
+  </footer>
+
+  <!-- ═══ CHAT WIDGET ═══ -->
+  <button class="chat-fab" id="chatFab" onclick="toggleChat()" aria-label="{{ t('nav_assistant') }}">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+  </button>
+
+  <div class="chat-popup" id="chatPopup">
+    <div class="chat-header">
+      <div>
+        <div class="chat-header-title">{{ t('chat_title') }}</div>
+        <div class="chat-header-badge">{{ t('chat_connected') }}</div>
+      </div>
+      <div class="flex gap-2">
+        <button class="btn btn-ghost btn-sm" onclick="clearChat()" aria-label="{{ t('chat_clear') }}">{{ t('chat_clear') }}</button>
+        <button class="icon-btn" onclick="toggleChat()" aria-label="Close chat">✕</button>
+      </div>
+    </div>
+
+    <div class="chat-messages" id="chatMessages">
+      <div class="chat-message chat-message-bot" id="chatWelcome"></div>
+    </div>
+
+    <div class="chat-quick-prompts" id="chatQuickPrompts">
+      <button class="chat-quick-btn" onclick="sendQuickPrompt(this)">{{ t('chat_prompt_remote_ds') }}</button>
+      <button class="chat-quick-btn" onclick="sendQuickPrompt(this)">{{ t('chat_prompt_ml_intern') }}</button>
+      <button class="chat-quick-btn" onclick="sendQuickPrompt(this)">{{ t('chat_prompt_nlp_skills') }}</button>
+      <button class="chat-quick-btn" onclick="sendQuickPrompt(this)">{{ t('chat_prompt_cv_tips') }}</button>
+    </div>
+
+    <div class="chat-input-area">
+      <input type="text" class="chat-input" id="chatInput"
+             placeholder="{{ t('chat_input_placeholder') }}"
+             aria-label="{{ t('chat_input_placeholder') }}"
+             onkeydown="if(event.key==='Enter')sendChat()" />
+      <button class="chat-send-btn" onclick="sendChat()" aria-label="Send message">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- ═══ SCRIPTS ═══ -->
+  <script src="{{ url_for('static', filename='main.js') }}"></script>
+  <script>
+    // ── Theme Toggle ──
+    function toggleTheme() {
+      const html = document.documentElement;
+      const isLight = html.classList.contains('light');
+      if (isLight) {
+        html.classList.remove('light');
+        html.classList.add('dark');
+        localStorage.setItem('theme', 'dark');
+      } else {
+        html.classList.remove('dark');
+        html.classList.add('light');
+        localStorage.setItem('theme', 'light');
+      }
+      updateThemeIcon();
+      window.dispatchEvent(new Event('themeChanged'));
+    }
+
+    function updateThemeIcon() {
+      const icon = document.getElementById('themeIcon');
+      if (!icon) return;
+      const isLight = document.documentElement.classList.contains('light');
+      icon.innerHTML = isLight
+        ? '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>'
+        : '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>';
+    }
+    updateThemeIcon();
+
+    // ── Mobile Menu ──
+    function toggleMobileMenu() {
+      const menu = document.getElementById('mobileMenu');
+      const btn = document.getElementById('hamburgerBtn');
+      const isOpen = menu.classList.contains('open');
+      menu.classList.toggle('open');
+      btn.classList.toggle('open');
+      btn.setAttribute('aria-expanded', !isOpen);
+      document.body.style.overflow = isOpen ? '' : 'hidden';
+    }
+
+    // ── Chat Widget ──
+    var chatHistory = [];
+
+    function toggleChat() {
+      const popup = document.getElementById('chatPopup');
+      popup.classList.toggle('open');
+      if (popup.classList.contains('open')) {
+        document.getElementById('chatInput').focus();
+      }
+    }
+
+    function clearChat() {
+      chatHistory = [];
+      const msgs = document.getElementById('chatMessages');
+      msgs.innerHTML = '<div class="chat-message chat-message-bot" id="chatWelcome"></div>';
+      renderWelcome();
+      document.getElementById('chatQuickPrompts').classList.remove('hidden');
+    }
+
+    function renderWelcome() {
+      const el = document.getElementById('chatWelcome');
+      if (el) el.innerHTML = renderMarkdown("{{ t('chat_welcome') }}");
+    }
+
+    function sendQuickPrompt(btn) {
+      const text = btn.textContent.trim();
+      document.getElementById('chatInput').value = text;
+      sendChat();
+    }
+
+    function sendChat() {
+      const input = document.getElementById('chatInput');
+      const message = input.value.trim();
+      if (!message) return;
+      input.value = '';
+
+      const msgs = document.getElementById('chatMessages');
+      document.getElementById('chatQuickPrompts').classList.add('hidden');
+
+      // User message
+      const userDiv = document.createElement('div');
+      userDiv.className = 'chat-message chat-message-user';
+      userDiv.textContent = message;
+      msgs.appendChild(userDiv);
+
+      // Thinking indicator
+      const thinkDiv = document.createElement('div');
+      thinkDiv.className = 'chat-message chat-message-bot';
+      thinkDiv.id = 'chatThinking';
+      thinkDiv.innerHTML = '<em style="color:var(--text-muted)">{{ t("chat_thinking") }}</em>';
+      msgs.appendChild(thinkDiv);
+      msgs.scrollTop = msgs.scrollHeight;
+
+      chatHistory.push({ role: 'user', content: message });
+
+      fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: message, history: chatHistory })
+      })
+      .then(r => r.json())
+      .then(data => {
+        const thinking = document.getElementById('chatThinking');
+        if (thinking) thinking.remove();
+
+        const botDiv = document.createElement('div');
+        botDiv.className = 'chat-message chat-message-bot';
+        botDiv.innerHTML = renderMarkdown(data.response || "{{ t('chat_err') }}");
+        msgs.appendChild(botDiv);
+        msgs.scrollTop = msgs.scrollHeight;
+
+        chatHistory.push({ role: 'assistant', content: data.response });
+      })
+      .catch(err => {
+        const thinking = document.getElementById('chatThinking');
+        if (thinking) thinking.remove();
+
+        const errDiv = document.createElement('div');
+        errDiv.className = 'chat-message chat-message-bot';
+        errDiv.innerHTML = "{{ t('chat_network_err') }}" + err.message;
+        msgs.appendChild(errDiv);
+        msgs.scrollTop = msgs.scrollHeight;
+      });
+    }
+
+    function renderMarkdown(text) {
+      if (!text) return '';
+      let html = text
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        .replace(/`(.*?)`/g, '<code style="background:var(--bg-elevated);padding:1px 4px;border-radius:3px;font-size:0.85em;">$1</code>')
+        .replace(/\n/g, '<br>');
+      return html;
+    }
+
+    // Init welcome message
+    document.addEventListener('DOMContentLoaded', function() {
+      renderWelcome();
+    });
+  </script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

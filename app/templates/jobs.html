@@ -1,0 +1,327 @@
+{% extends "base.html" %}
+{% block title %}{{ t('nav_jobs') }}{% endblock %}
+
+{% block head %}
+<style>
+  /* Page-specific utilities — no Tailwind */
+  .jobs-header { margin-bottom: var(--space-8); }
+  .jobs-count { color: var(--accent); }
+  .filter-bar {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    padding: var(--space-5);
+    margin-bottom: var(--space-8);
+  }
+  .filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-4);
+  }
+  .filter-field { flex: 1; min-width: 180px; }
+  .filter-actions { display: flex; gap: var(--space-2); align-items: center; }
+
+  .job-card-body { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .job-card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: var(--space-4);
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--border-subtle);
+    flex-wrap: wrap;
+    gap: var(--space-3);
+  }
+  .job-desc-preview {
+    margin-top: var(--space-3);
+    padding: var(--space-3);
+    background: var(--bg-inset);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    font-size: var(--text-xs);
+    color: var(--text-secondary);
+    line-height: var(--leading-relaxed);
+    max-height: 160px;
+    overflow-y: auto;
+    white-space: pre-line;
+    unicode-bidi: plaintext;
+    text-align: start;
+  }
+  .empty-state {
+    text-align: center;
+    padding: var(--space-16) var(--space-6);
+  }
+  .empty-state-icon { font-size: var(--text-4xl); margin-bottom: var(--space-3); }
+  .pagination-ellipsis {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    height: 36px;
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+  }
+  @media (max-width: 768px) {
+    .filter-field { min-width: 100%; }
+    .filter-actions { width: 100%; }
+    .job-card-footer { flex-direction: column; align-items: flex-start; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+{# ═══ PAGE HEADER ═══ #}
+<div class="jobs-header">
+  <h1 class="text-h1">{{ t('jobs_title') }}</h1>
+  <p class="text-body text-sm" style="margin-top: var(--space-2);">
+    {{ t('jobs_subtitle') }}
+    <span class="jobs-count font-semibold">— {{ total_jobs }} {{ t('jobs_found') }}</span>
+  </p>
+</div>
+
+{# ═══ FILTER BAR ═══ #}
+<form method="GET" action="/jobs" class="auto-submit filter-bar" role="search" aria-label="{{ t('btn_filter') }}">
+  <div class="filter-row">
+    {# Search input #}
+    <div class="filter-field" style="flex: 2;">
+      <input type="text" name="q" value="{{ search_query }}"
+             placeholder="{{ t('search_placeholder') }}"
+             class="form-input" id="jobSearchInput"
+             aria-label="{{ t('search_placeholder') }}" />
+    </div>
+
+    {# Country #}
+    <div class="filter-field">
+      <select name="country" class="form-select" id="filterCountry" aria-label="{{ t('opt_all_countries') }}">
+        <option value="all">{{ t('opt_all_countries') }}</option>
+        {% for c in countries %}
+        <option value="{{ c }}" {% if c == selected_country %}selected{% endif %}>📍 {{ c }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    {# Workplace type #}
+    <div class="filter-field">
+      <select name="job_type" class="form-select" id="filterJobType" aria-label="{{ t('opt_all_workplaces') }}">
+        <option value="all" {% if selected_job_type == 'all' %}selected{% endif %}>{{ t('opt_all_workplaces') }}</option>
+        <option value="remote"  {% if selected_job_type == 'remote' %}selected{% endif %}>🌍 {{ t('remote') }}</option>
+        <option value="hybrid"  {% if selected_job_type == 'hybrid' %}selected{% endif %}>⏳ {{ t('hybrid') }}</option>
+        <option value="onsite"  {% if selected_job_type == 'onsite' %}selected{% endif %}>🏢 {{ t('onsite') }}</option>
+      </select>
+    </div>
+
+    {# Contract type #}
+    <div class="filter-field">
+      <select name="contract_type" class="form-select" id="filterContract" aria-label="{{ t('opt_all_contracts') }}">
+        <option value="all" {% if selected_contract == 'all' %}selected{% endif %}>{{ t('opt_all_contracts') }}</option>
+        <option value="full-time"  {% if selected_contract == 'full-time' %}selected{% endif %}>{{ t('full-time') }}</option>
+        <option value="part-time"  {% if selected_contract == 'part-time' %}selected{% endif %}>{{ t('part-time') }}</option>
+        <option value="internship" {% if selected_contract == 'internship' %}selected{% endif %}>🎓 {{ t('internship') }}</option>
+      </select>
+    </div>
+
+    {# Seniority #}
+    <div class="filter-field">
+      <select name="seniority" class="form-select" id="filterSeniority" aria-label="{{ t('opt_all_levels') }}">
+        <option value="all" {% if selected_seniority == 'all' %}selected{% endif %}>{{ t('opt_all_levels') }}</option>
+        {% for s in seniorities %}
+        <option value="{{ s }}" {% if s == selected_seniority %}selected{% endif %}>{{ t(s) }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    {# Actions #}
+    <div class="filter-actions">
+      <button type="submit" class="btn btn-primary btn-sm">{{ t('btn_filter') }}</button>
+      <a href="/jobs" class="btn btn-secondary btn-sm">{{ t('btn_reset') }}</a>
+    </div>
+  </div>
+</form>
+
+{# ═══ JOB CARDS GRID ═══ #}
+{% if jobs %}
+<div class="grid grid-auto" role="list" aria-label="{{ t('jobs_title') }}">
+  {% for job in jobs %}
+  <div class="job-card card-interactive stagger-in" role="listitem"
+       style="flex-direction: column;"
+       id="job-{{ loop.index }}">
+    <div class="job-card-body">
+      {# Title & Company #}
+      <div class="flex justify-between items-center gap-3">
+        <h3 class="job-title" title="{{ job.title }}" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+          {{ job.title }}
+        </h3>
+        {% if job.contract_type %}
+        <span class="badge badge-accent" style="flex-shrink: 0;">{{ t(job.contract_type) }}</span>
+        {% endif %}
+      </div>
+      <p class="job-company">🏢 {{ job.company_name or t('lbl_confidential') }}</p>
+
+      {# Badges: job type, seniority, country, date #}
+      <div class="job-meta">
+        {% if job.job_type %}
+        <span class="badge badge-secondary">{{ t(job.job_type) }}</span>
+        {% endif %}
+        {% if job.seniority %}
+        <span class="badge">{{ t(job.seniority) }}</span>
+        {% endif %}
+        {% if job.country %}
+        <span class="badge">📍 {{ job.country }}</span>
+        {% endif %}
+        {% if job.posted_at or job.scraped_at %}
+          {% set raw_date = job.posted_at or job.scraped_at %}
+          {% set da = days_ago(raw_date) %}
+          <span class="badge">📅 {{ raw_date[:10] }}{% if da %} ({{ da }}){% endif %}</span>
+        {% endif %}
+      </div>
+
+      {# Collapsible description preview #}
+      <div id="preview-{{ loop.index }}" class="job-desc-preview hidden">
+        {%- if current_lang == 'ar' -%}
+          {%- if job.summary_ar -%}
+            {{ job.summary_ar }}
+          {%- elif job.summary_en -%}
+            {{ job.summary_en }}
+          {%- else -%}
+            {{ (job.description or '')[:300] }}
+          {%- endif -%}
+        {%- else -%}
+          {%- if job.summary_en -%}
+            {{ job.summary_en }}
+          {%- else -%}
+            {{ (job.description or '')[:300] }}
+          {%- endif -%}
+        {%- endif -%}
+      </div>
+    </div>
+
+    {# Footer: Salary + Action Buttons #}
+    <div class="job-card-footer">
+      {# Salary display with country-aware currency #}
+      {% set country_lower = (job.country or '')|lower %}
+      {% if country_lower in ['uk', 'gb', 'united kingdom'] %}
+        {% set currency = '£' %}
+      {% elif country_lower in ['us', 'usa', 'united states'] %}
+        {% set currency = '$' %}
+      {% elif country_lower in ['eg', 'egypt'] %}
+        {% set currency = 'E£' %}
+      {% else %}
+        {% set currency = '£' %}
+      {% endif %}
+
+      {% if job.salary_min or job.salary_max %}
+      <span class="job-salary">
+        💰
+        {% if job.salary_min %}{{ currency }}{{ "{:,.0f}".format(job.salary_min) }}{% endif %}
+        {% if job.salary_min and job.salary_max %}–{% endif %}
+        {% if job.salary_max %}{{ currency }}{{ "{:,.0f}".format(job.salary_max) }}{% endif %}
+      </span>
+      {% elif job.predicted_min or job.predicted_max %}
+      <span class="job-salary-predicted" title="{{ t('lbl_ml_predicted') }}">
+        🤖
+        {% if job.predicted_min %}{{ currency }}{{ "{:,.0f}".format(job.predicted_min) }}{% endif %}
+        {% if job.predicted_min and job.predicted_max %}–{% endif %}
+        {% if job.predicted_max %}{{ currency }}{{ "{:,.0f}".format(job.predicted_max) }}{% endif %}
+        ({{ t('lbl_ml_predicted') }})
+      </span>
+      {% else %}
+      <span class="job-salary-predicted">🤖 {{ t('lbl_ml_predicted') }}</span>
+      {% endif %}
+
+      {# Action buttons #}
+      <div class="flex gap-2">
+        <button type="button"
+                onclick="togglePreview({{ loop.index }}, this)"
+                class="btn btn-ghost btn-sm"
+                aria-expanded="false"
+                aria-controls="preview-{{ loop.index }}"
+                id="toggle-btn-{{ loop.index }}">
+          {{ t('lbl_preview') }}
+        </button>
+        {% if job.source_url %}
+        <a href="{{ job.source_url }}" target="_blank" rel="noopener noreferrer"
+           class="btn btn-ghost btn-sm"
+           aria-label="{{ t('lbl_details') }} — {{ job.title }}">
+          {{ t('lbl_details') }}
+        </a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+{# ═══ PAGINATION ═══ #}
+{% if total_pages > 1 %}
+<nav class="pagination" role="navigation" aria-label="Pagination">
+  {# Previous #}
+  {% if page > 1 %}
+  <a href="{{ url_for('main.jobs', page=page-1, country=selected_country, job_type=selected_job_type, contract_type=selected_contract, seniority=selected_seniority, q=search_query) }}"
+     class="page-btn" aria-label="{{ t('nav_prev') }}">
+    &larr; {{ t('nav_prev') }}
+  </a>
+  {% endif %}
+
+  {# First page + ellipsis #}
+  {% if page_range[0] > 1 %}
+  <a href="{{ url_for('main.jobs', page=1, country=selected_country, job_type=selected_job_type, contract_type=selected_contract, seniority=selected_seniority, q=search_query) }}"
+     class="page-btn" aria-label="Page 1">1</a>
+  {% if page_range[0] > 2 %}
+  <span class="pagination-ellipsis" aria-hidden="true">…</span>
+  {% endif %}
+  {% endif %}
+
+  {# Page range #}
+  {% for p in page_range %}
+  <a href="{{ url_for('main.jobs', page=p, country=selected_country, job_type=selected_job_type, contract_type=selected_contract, seniority=selected_seniority, q=search_query) }}"
+     class="page-btn {% if p == page %}active{% endif %}"
+     {% if p == page %}aria-current="page"{% endif %}
+     aria-label="Page {{ p }}">{{ p }}</a>
+  {% endfor %}
+
+  {# Last page + ellipsis #}
+  {% if page_range[-1] < total_pages %}
+  {% if page_range[-1] < total_pages - 1 %}
+  <span class="pagination-ellipsis" aria-hidden="true">…</span>
+  {% endif %}
+  <a href="{{ url_for('main.jobs', page=total_pages, country=selected_country, job_type=selected_job_type, contract_type=selected_contract, seniority=selected_seniority, q=search_query) }}"
+     class="page-btn" aria-label="Page {{ total_pages }}">{{ total_pages }}</a>
+  {% endif %}
+
+  {# Next #}
+  {% if page < total_pages %}
+  <a href="{{ url_for('main.jobs', page=page+1, country=selected_country, job_type=selected_job_type, contract_type=selected_contract, seniority=selected_seniority, q=search_query) }}"
+     class="page-btn" aria-label="{{ t('nav_next') }}">
+    {{ t('nav_next') }} &rarr;
+  </a>
+  {% endif %}
+</nav>
+{% endif %}
+
+{% else %}
+{# ═══ EMPTY STATE ═══ #}
+<div class="card empty-state">
+  <div class="empty-state-icon" aria-hidden="true">🔍</div>
+  <p class="text-h3 font-bold">{{ t('err_no_jobs') }}</p>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+  function togglePreview(jobIndex, btn) {
+    var el = document.getElementById('preview-' + jobIndex);
+    var isHidden = el.classList.contains('hidden');
+    if (isHidden) {
+      el.classList.remove('hidden');
+      btn.textContent = "{{ t('lbl_hide') }}";
+      btn.setAttribute('aria-expanded', 'true');
+    } else {
+      el.classList.add('hidden');
+      btn.textContent = "{{ t('lbl_preview') }}";
+      btn.setAttribute('aria-expanded', 'false');
+    }
+  }
+</script>
+{% endblock %}

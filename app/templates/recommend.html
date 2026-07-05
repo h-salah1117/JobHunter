@@ -302,7 +302,7 @@
 
         <!-- Sub-tab: PDF Preview -->
         <div id="result-preview-content" style="overflow-x:auto;padding:var(--space-4);background:var(--bg-inset);border-radius:var(--radius-lg);border:1px solid var(--border-subtle);">
-          <div id="resume-preview-page" class="resume-preview-page">
+          <div id="resume-preview-page" class="resume-preview-page" style="direction: {% if current_lang == 'ar' %}rtl{% else %}ltr{% endif %}; text-align: {% if current_lang == 'ar' %}right{% else %}left{% endif %};">
             <!-- Contact Info Header -->
             <div style="text-align:center;margin-bottom:12pt;">
               <h1 id="preview-name" style="font-size:20pt;font-weight:bold;margin:0 0 2pt 0;text-transform:uppercase;"></h1>
@@ -312,38 +312,38 @@
             </div>
             <!-- Summary -->
             <div style="margin-bottom:12pt;">
-              <h2 style="font-size:11.5pt;font-weight:bold;border-bottom:1.5px solid #000;padding-bottom:1pt;margin:0 0 4pt 0;text-transform:uppercase;">Summary</h2>
+              <h2 style="font-size:11.5pt;font-weight:bold;border-bottom:1.5px solid #000;padding-bottom:1pt;margin:0 0 4pt 0;text-transform:uppercase;">{% if current_lang == 'ar' %}الملخص المهني{% else %}Summary{% endif %}</h2>
               <p id="preview-summary-text" style="margin:0;font-size:10.5pt;text-align:justify;"></p>
             </div>
             <!-- Skills -->
             <div style="margin-bottom:12pt;">
-              <h2 style="font-size:11.5pt;font-weight:bold;border-bottom:1.5px solid #000;padding-bottom:1pt;margin:0 0 4pt 0;text-transform:uppercase;">Skills</h2>
+              <h2 style="font-size:11.5pt;font-weight:bold;border-bottom:1.5px solid #000;padding-bottom:1pt;margin:0 0 4pt 0;text-transform:uppercase;">{% if current_lang == 'ar' %}المهارات{% else %}Skills{% endif %}</h2>
               <div style="font-size:10.5pt;margin:0;">
-                <strong>Core Technologies:</strong> <span id="preview-skills-text"></span>
+                <strong>{% if current_lang == 'ar' %}التقنيات الأساسية:{% else %}Core Technologies:{% endif %}</strong> <span id="preview-skills-text"></span>
               </div>
             </div>
             <!-- Experience -->
             <div style="margin-bottom:12pt;">
-              <h2 style="font-size:11.5pt;font-weight:bold;border-bottom:1.5px solid #000;padding-bottom:1pt;margin:0 0 4pt 0;text-transform:uppercase;">Experience</h2>
+              <h2 style="font-size:11.5pt;font-weight:bold;border-bottom:1.5px solid #000;padding-bottom:1pt;margin:0 0 4pt 0;text-transform:uppercase;">{% if current_lang == 'ar' %}الخبرة المهنية{% else %}Experience{% endif %}</h2>
               <div style="margin-bottom:6pt;">
                 <table style="width:100%;border-collapse:collapse;margin-bottom:2pt;">
                   <tr>
-                    <td id="preview-exp-company" style="font-weight:bold;font-size:10.5pt;text-align:left;padding:0;"></td>
-                    <td id="preview-exp-dates" style="font-weight:bold;font-size:10.5pt;text-align:right;padding:0;"></td>
+                    <td id="preview-exp-company" style="font-weight:bold;font-size:10.5pt;text-align: {% if current_lang == 'ar' %}right{% else %}left{% endif %};padding:0;"></td>
+                    <td id="preview-exp-dates" style="font-weight:bold;font-size:10.5pt;text-align: {% if current_lang == 'ar' %}left{% else %}right{% endif %};padding:0;"></td>
                   </tr>
                 </table>
                 <div id="preview-exp-role" style="font-style:italic;font-size:10.5pt;margin-bottom:4pt;"></div>
-                <ul id="preview-exp-bullets" style="list-style-type:disc;margin:0;padding-left:18pt;font-size:10pt;line-height:1.4;"></ul>
+                <ul id="preview-exp-bullets" style="list-style-type:disc;margin:0;padding-left:18pt;padding-right:18pt;font-size:10pt;line-height:1.4;"></ul>
               </div>
             </div>
             <!-- Education -->
             <div style="margin-bottom:12pt;">
-              <h2 style="font-size:11.5pt;font-weight:bold;border-bottom:1.5px solid #000;padding-bottom:1pt;margin:0 0 4pt 0;text-transform:uppercase;">Education</h2>
+              <h2 style="font-size:11.5pt;font-weight:bold;border-bottom:1.5px solid #000;padding-bottom:1pt;margin:0 0 4pt 0;text-transform:uppercase;">{% if current_lang == 'ar' %}التعليم{% else %}Education{% endif %}</h2>
               <div>
                 <table style="width:100%;border-collapse:collapse;margin-bottom:2pt;">
                   <tr>
-                    <td id="preview-edu-uni" style="font-weight:bold;font-size:10.5pt;text-align:left;padding:0;"></td>
-                    <td id="preview-edu-year" style="font-weight:bold;font-size:10.5pt;text-align:right;padding:0;"></td>
+                    <td id="preview-edu-uni" style="font-weight:bold;font-size:10.5pt;text-align: {% if current_lang == 'ar' %}right{% else %}left{% endif %};padding:0;"></td>
+                    <td id="preview-edu-year" style="font-weight:bold;font-size:10.5pt;text-align: {% if current_lang == 'ar' %}left{% else %}right{% endif %};padding:0;"></td>
                   </tr>
                 </table>
                 <div id="preview-edu-degree" style="font-style:italic;font-size:10.5pt;"></div>
@@ -723,7 +723,15 @@
         .replace(/\^/g, '\\textasciicircum ');
     }
 
+    var currentLang = "{{ current_lang }}";
+    var labelSummary = (currentLang === 'ar') ? 'الملخص المهني' : 'Summary';
+    var labelSkills = (currentLang === 'ar') ? 'المهارات' : 'Skills';
+    var labelCoreTech = (currentLang === 'ar') ? 'التقنيات الأساسية:' : 'Core Technologies:';
+    var labelExperience = (currentLang === 'ar') ? 'الخبرة المهنية' : 'Experience';
+    var labelEducation = (currentLang === 'ar') ? 'التعليم' : 'Education';
+
     var latexTemplate = '\\documentclass[letterpaper,10pt]{article}\n'
+      + ((currentLang === 'ar') ? '% Compile with XeLaTeX for proper Arabic rendering\n\\usepackage{fontspec}\n\\newfontfamily\\arabicfont[Script=Arabic]{Amiri}\n' : '')
       + '\\usepackage[utf8]{inputenc}\n'
       + '\\usepackage{geometry}\n'
       + '\\geometry{left=0.75in, top=0.75in, right=0.75in, bottom=0.75in}\n'
@@ -743,20 +751,20 @@
       + '\\href{https://linkedin.com/in/' + escapeLatex(linkedin) + '}{LinkedIn: ' + escapeLatex(linkedin) + '}\n'
       + '\\end{center}\n\n'
       + '\\vspace{5pt}\n\n'
-      + '\\section*{Summary}\n'
+      + '\\section*{' + labelSummary + '}\n'
       + escapeLatex(summary) + '\n\n'
       + '\\vspace{5pt}\n\n'
-      + '\\section*{Skills}\n'
-      + '\\textbf{Core Technologies:} ' + escapeLatex(skills) + '\n\n'
+      + '\\section*{' + labelSkills + '}\n'
+      + '\\textbf{' + labelCoreTech + '} ' + escapeLatex(skills) + '\n\n'
       + '\\vspace{5pt}\n\n'
-      + '\\section*{Experience}\n'
+      + '\\section*{' + labelExperience + '}\n'
       + '\\textbf{' + escapeLatex(expCompany) + '} \\hfill ' + escapeLatex(expDates) + ' \\\\\\\\\n'
       + '\\textit{' + escapeLatex(expRole) + '}\n'
       + '\\begin{itemize}[leftmargin=*, noitemsep, topsep=2pt]\n'
       + latexBullets + '\n'
       + '\\end{itemize}\n\n'
       + '\\vspace{5pt}\n\n'
-      + '\\section*{Education}\n'
+      + '\\section*{' + labelEducation + '}\n'
       + '\\textbf{' + escapeLatex(eduUni) + '} \\hfill ' + escapeLatex(eduYear) + ' \\\\\\\\\n'
       + '\\textit{' + escapeLatex(eduDegree) + '}\n\n'
       + '\\end{document}\n';

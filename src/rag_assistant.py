@@ -384,8 +384,18 @@ def summarize_description(description: str) -> tuple[str, str]:
             
         import json
         data = json.loads(content)
-        summary_en = data.get("summary_en", "").strip()
-        summary_ar = data.get("summary_ar", "").strip()
+        summary_en_val = data.get("summary_en", "")
+        if isinstance(summary_en_val, list):
+            summary_en = "\n".join(f"- {str(item).strip()}" for item in summary_en_val if str(item).strip())
+        else:
+            summary_en = str(summary_en_val).strip()
+
+        summary_ar_val = data.get("summary_ar", "")
+        if isinstance(summary_ar_val, list):
+            summary_ar = "\n".join(f"- {str(item).strip()}" for item in summary_ar_val if str(item).strip())
+        else:
+            summary_ar = str(summary_ar_val).strip()
+
         return summary_en, summary_ar
     except Exception as e:
         logging.error(f"[RAG] Error during description summarization: {e}")

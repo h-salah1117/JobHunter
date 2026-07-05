@@ -15,6 +15,14 @@ def create_app():
     app.secret_key = os.getenv('SECRET_KEY') or os.urandom(32).hex()
     app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # 5MB upload limit
 
+    # Download database from HF Hub if available
+    try:
+        from hf_sync import download_db_from_hf
+        download_db_from_hf()
+    except Exception as e:
+        import logging
+        logging.warning(f"[HF-Sync] Warning downloading DB on startup: {e}")
+
     # Init DB on startup
     with app.app_context():
         init_db()
@@ -33,10 +41,12 @@ def create_app():
     def preload_resources():
         try:
             logging.info("[RAG] Background preloading embedding model and ChromaDB client...")
-            from src.rag_assistant import _get_embedding_model, get_chroma_client_and_collection
+            from src.rag_assistant import _get_embedding_model, get_chroma_client_and_collection, index_new_jobs
             _get_embedding_model()
             get_chroma_client_and_collection()
-            logging.info("[RAG] Background preloading complete!")
+            # Index downloaded/restored jobs into ChromaDB in background
+            index_new_jobs()
+            logging.info("[RAG] Background preloading and indexing complete!")
         except Exception as e:
             logging.warning(f"[RAG] Warning preloading resources in background: {e}")
 

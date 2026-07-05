@@ -79,12 +79,19 @@ def _refresh_job():
     except Exception as e:
         logging.info(f'[Scheduler] salary retrain error: {e}')
 
-    # Week 4: Sync all new jobs into ChromaDB vector database
+    # Sync all new jobs into ChromaDB vector database
     try:
         from rag_assistant import index_new_jobs
         index_new_jobs()
     except Exception as e:
         logging.info(f'[Scheduler] ChromaDB indexing error: {e}')
+
+    # Sync database to Hugging Face Dataset (Week 4 persistent storage)
+    try:
+        from hf_sync import upload_db_to_hf
+        upload_db_to_hf()
+    except Exception as e:
+        logging.info(f'[Scheduler] HF Dataset upload error: {e}')
 
     _last_run_time = datetime.now().isoformat()
     logging.info(f'[Scheduler] Refresh complete at {_last_run_time}')
@@ -162,6 +169,14 @@ def _auto_backfill_summaries_job():
                 logging.info(f"[Scheduler] Error summarizing job ID {job_id} in background: {e}")
 
     logging.info(f"[Scheduler] AI Summary backfill batch finished. Summarized: {success_count}/{len(rows)} jobs.")
+    
+    # Back up the new summaries to HF Dataset
+    if success_count > 0:
+        try:
+            from hf_sync import upload_db_to_hf
+            upload_db_to_hf()
+        except Exception as e:
+            logging.info(f"[Scheduler] HF Dataset upload error after summaries backfill: {e}")
 
 
 def get_last_run() -> str | None:

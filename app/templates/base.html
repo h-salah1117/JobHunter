@@ -54,9 +54,9 @@
       <div class="nav-actions">
         <!-- Language Switcher -->
         {% if current_lang == 'ar' %}
-        <a href="/change-lang/en" class="icon-btn" aria-label="Switch to English" title="English">EN</a>
+        <button onclick="changeLanguage('en')" class="icon-btn" style="background:transparent;border:none;cursor:pointer;font-family:inherit;font-weight:600;color:var(--text)" aria-label="Switch to English" title="English">EN</button>
         {% else %}
-        <a href="/change-lang/ar" class="icon-btn" aria-label="التبديل للعربية" title="عربي">ع</a>
+        <button onclick="changeLanguage('ar')" class="icon-btn" style="background:transparent;border:none;cursor:pointer;font-family:inherit;font-weight:600;color:var(--text)" aria-label="التبديل للعربية" title="عربي">ع</button>
         {% endif %}
 
         <!-- Theme Toggle -->
@@ -273,6 +273,33 @@
     document.addEventListener('DOMContentLoaded', function() {
       renderWelcome();
     });
+
+    // Client-side language storage and synchronization (iframe & cookie bypass)
+    function changeLanguage(lang) {
+      localStorage.setItem('lang', lang);
+      const url = new URL(window.location.href);
+      url.searchParams.set('lang', lang);
+      window.location.href = url.toString();
+    }
+
+    (function() {
+      const savedLang = localStorage.getItem('lang');
+      const currentLang = "{{ current_lang }}";
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlLang = urlParams.get('lang');
+
+      // If lang parameter is present, save it to localStorage
+      if (urlLang && (urlLang === 'en' || urlLang === 'ar')) {
+        if (savedLang !== urlLang) {
+          localStorage.setItem('lang', urlLang);
+        }
+      } else if (savedLang && savedLang !== currentLang) {
+        // If saved lang doesn't match rendered lang, redirect to sync with parameter
+        const url = new URL(window.location.href);
+        url.searchParams.set('lang', savedLang);
+        window.location.href = url.toString();
+      }
+    })();
   </script>
   {% block scripts %}{% endblock %}
 </body>

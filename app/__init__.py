@@ -64,7 +64,8 @@ def create_app():
     def inject_translations():
         from flask import session, request
         from app.translations import TRANSLATIONS
-        lang = request.cookies.get('lang', session.get('lang', 'en'))
+        # Prioritize URL param ?lang= for modern iframe environments with blocked third-party cookies
+        lang = request.args.get('lang') or request.cookies.get('lang', session.get('lang', 'en'))
         if lang not in ['en', 'ar']:
             lang = 'en'
         def translate(key):

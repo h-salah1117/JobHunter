@@ -42,7 +42,7 @@ def _get_embedding_model():
         _embedding_model = SentenceTransformer('intfloat/multilingual-e5-base')
     return _embedding_model
 
-def _get_hf_client_or_pipeline():
+def _get_hf_client_or_pipeline(force_local=False):
     """
     Returns (client, pipeline) depending on configuration.
     Prioritizes InferenceClient (Serverless API) if HF_TOKEN or HF_API_TOKEN is in environment.
@@ -51,7 +51,7 @@ def _get_hf_client_or_pipeline():
     global _hf_pipeline, _hf_inference_client
     
     hf_token = os.getenv("HF_TOKEN") or os.getenv("HF_API_TOKEN")
-    if hf_token:
+    if hf_token and not force_local:
         if _hf_inference_client is None:
             from huggingface_hub import InferenceClient
             # Use a powerful instruction-following model like Qwen 2.5 72B or Llama 3.2 3B
@@ -66,7 +66,7 @@ def _get_hf_client_or_pipeline():
         import torch
         
         model_name = os.getenv("HF_LOCAL_MODEL") or "Qwen/Qwen2.5-0.5B-Instruct"
-        logging.info(f"[RAG] No HF_TOKEN found. Initializing local model: {model_name}...")
+        logging.info(f"[RAG] Initializing local model: {model_name}...")
         
         tokenizer = AutoTokenizer.from_pretrained(model_name)
         model = AutoModelForCausalLM.from_pretrained(
@@ -95,7 +95,7 @@ def _call_llm_hf(messages, temperature=0.7, max_tokens=600, json_mode=False) -> 
             return response.choices[0].message.content.strip()
         except Exception as e:
             logging.error(f"[RAG] HF InferenceClient API call failed: {e}. Falling back to local pipeline...")
-            _, pipe = _get_hf_client_or_pipeline()
+            _, pipe = _get_hf_client_or_pipeline(force_local=True)
             
     if pipe:
         try:

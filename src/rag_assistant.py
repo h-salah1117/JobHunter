@@ -19,8 +19,8 @@ CHROMA_DIR = os.path.join(os.path.dirname(__file__), '..', 'data', 'chroma_db')
 
 # ── Caches ───────────────────────────────────────────────────────────────────
 _embedding_model = None
-_hf_pipeline = None
-_hf_inference_client = None
+_hf_pipelines = {}
+_hf_inference_clients = {}
 _chroma_client = None
 _chroma_collection = None
 
@@ -42,47 +42,52 @@ def _get_embedding_model():
         _embedding_model = SentenceTransformer('intfloat/multilingual-e5-base')
     return _embedding_model
 
-def _get_hf_client_or_pipeline(force_local=False):
+def _get_hf_client_or_pipeline(model_type='chat', force_local=False):
     """
-    Returns (client, pipeline) depending on configuration.
+    Returns (client, pipeline) depending on configuration and model type.
     Prioritizes InferenceClient (Serverless API) if HF_TOKEN or HF_API_TOKEN is in environment.
-    Falls back to loading Qwen/Qwen2.5-0.5B-Instruct locally.
+    Falls back to loading local model.
     """
-    global _hf_pipeline, _hf_inference_client
+    global _hf_pipelines, _hf_inference_clients
     
     hf_token = os.getenv("HF_TOKEN") or os.getenv("HF_API_TOKEN")
+    
+    # Custom model selection by type
+    if model_type == 'chat':
+        api_model = os.getenv("HF_API_MODEL_CHAT") or os.getenv("HF_API_MODEL") or "Qwen/Qwen2.5-72B-Instruct"
+        local_model = os.getenv("HF_LOCAL_MODEL_CHAT") or os.getenv("HF_LOCAL_MODEL") or "Qwen/Qwen2.5-0.5B-Instruct"
+    else: # summary
+        api_model = os.getenv("HF_API_MODEL_SUMMARY") or os.getenv("HF_API_MODEL") or "meta-llama/Llama-3.2-3B-Instruct"
+        local_model = os.getenv("HF_LOCAL_MODEL_SUMMARY") or os.getenv("HF_LOCAL_MODEL") or "Qwen/Qwen2.5-0.5B-Instruct"
+        
     if hf_token and not force_local:
-        if _hf_inference_client is None:
+        if api_model not in _hf_inference_clients:
             from huggingface_hub import InferenceClient
-            # Use a powerful instruction-following model like Qwen 2.5 72B or Llama 3.2 3B
-            model_name = os.getenv("HF_API_MODEL") or "Qwen/Qwen2.5-72B-Instruct"
-            logging.info(f"[RAG] Initializing Hugging Face InferenceClient with model: {model_name}...")
-            _hf_inference_client = InferenceClient(model=model_name, token=hf_token)
-        return _hf_inference_client, None
+            logging.info(f"[RAG] Initializing HF InferenceClient ({model_type}) with model: {api_model}...")
+            _hf_inference_clients[api_model] = InferenceClient(model=api_model, token=hf_token)
+        return _hf_inference_clients[api_model], None
         
     # Local fallback
-    if _hf_pipeline is None:
+    if local_model not in _hf_pipelines:
         from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
         import torch
+        logging.info(f"[RAG] Initializing local model ({model_type}): {local_model}...")
         
-        model_name = os.getenv("HF_LOCAL_MODEL") or "Qwen/Qwen2.5-0.5B-Instruct"
-        logging.info(f"[RAG] Initializing local model: {model_name}...")
-        
-        tokenizer = AutoTokenizer.from_pretrained(model_name)
+        tokenizer = AutoTokenizer.from_pretrained(local_model)
         model = AutoModelForCausalLM.from_pretrained(
-            model_name,
+            local_model,
             torch_dtype=torch.float32 if not torch.cuda.is_available() else torch.float16
         )
         if torch.cuda.is_available():
             model = model.to("cuda")
-        _hf_pipeline = pipeline("text-generation", model=model, tokenizer=tokenizer)
-        logging.info("[RAG] Local model loaded successfully!")
+        _hf_pipelines[local_model] = pipeline("text-generation", model=model, tokenizer=tokenizer)
+        logging.info(f"[RAG] Local model ({model_type}) loaded successfully!")
         
-    return None, _hf_pipeline
+    return None, _hf_pipelines[local_model]
 
-def _call_llm_hf(messages, temperature=0.7, max_tokens=600, json_mode=False) -> str:
+def _call_llm_hf(messages, temperature=0.7, max_tokens=600, json_mode=False, model_type='chat') -> str:
     """Wrapper that routes prompt to serverless InferenceClient or local transformers pipeline."""
-    client, pipe = _get_hf_client_or_pipeline()
+    client, pipe = _get_hf_client_or_pipeline(model_type=model_type)
     
     if client:
         try:
@@ -95,7 +100,7 @@ def _call_llm_hf(messages, temperature=0.7, max_tokens=600, json_mode=False) -> 
             return response.choices[0].message.content.strip()
         except Exception as e:
             logging.error(f"[RAG] HF InferenceClient API call failed: {e}. Falling back to local pipeline...")
-            _, pipe = _get_hf_client_or_pipeline(force_local=True)
+            _, pipe = _get_hf_client_or_pipeline(model_type=model_type, force_local=True)
             
     if pipe:
         try:
@@ -331,7 +336,7 @@ def chat_with_coach(user_message: str, chat_history: list = None) -> str:
     messages.append({"role": "user", "content": user_message})
 
     try:
-        response = _call_llm_hf(messages, temperature=0.7, max_tokens=1000)
+        response = _call_llm_hf(messages, temperature=0.7, max_tokens=1000, model_type='chat')
         return response
     except Exception as e:
         return f"يا خبر أبيض! حصلت مشكلة وأنا بحاول أكلم السيرفر: {e}"
@@ -372,7 +377,7 @@ def summarize_description(description: str) -> tuple[str, str]:
             {"role": "system", "content": "You are a professional assistant that always outputs a valid raw JSON object with keys 'summary_en' and 'summary_ar'."},
             {"role": "user", "content": prompt}
         ]
-        content = _call_llm_hf(messages, temperature=0.1, max_tokens=600, json_mode=True)
+        content = _call_llm_hf(messages, temperature=0.1, max_tokens=600, json_mode=True, model_type='summary')
         
         # Strip markdown fences and extract raw JSON object using regex
         import re
@@ -461,7 +466,7 @@ def analyze_cv_for_ats(cv_text: str) -> dict:
     ]
 
     try:
-        content = _call_llm_hf(messages, temperature=0.1, max_tokens=600, json_mode=True)
+        content = _call_llm_hf(messages, temperature=0.1, max_tokens=600, json_mode=True, model_type='chat')
         
         # Strip markdown fences and extract raw JSON object using regex
         import re

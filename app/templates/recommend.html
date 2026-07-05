@@ -517,13 +517,30 @@
             {% set da = days_ago(raw_d) %}
             <span class="badge">📅 {{ raw_d[:10] }}{% if da %} ({{ da }}){% endif %}</span>
             {% endif %}
+            {% set country_lower = (job.country or '')|lower %}
+            {% if country_lower in ['uk', 'gb', 'united kingdom'] %}
+              {% set currency = '£' %}
+            {% elif country_lower in ['us', 'usa', 'united states'] %}
+              {% set currency = '$' %}
+            {% elif country_lower in ['eg', 'egypt'] %}
+              {% set currency = 'E£' %}
+            {% else %}
+              {% set currency = '£' %}
+            {% endif %}
+
             {% if job.salary_min or job.salary_max %}
             <span class="job-salary">
-              💰 {% if job.salary_min %}£{{ "{:,.0f}".format(job.salary_min) }}{% endif %}{% if job.salary_max %} – £{{ "{:,.0f}".format(job.salary_max) }}{% endif %}
+              💰 {% if job.salary_min %}{{ currency }}{{ "{:,.0f}".format(job.salary_min) }}{% endif %}{% if job.salary_max %} – {{ currency }}{{ "{:,.0f}".format(job.salary_max) }}{% endif %}
             </span>
             {% elif job.predicted_min or job.predicted_max %}
-            <span class="job-salary-predicted" title="Machine Learning Prediction">
-              🤖 £{{ "{:,.0f}".format(job.predicted_min) }}–£{{ "{:,.0f}".format(job.predicted_max) }} (ML)
+            <span class="job-salary-predicted" title="{{ t('lbl_ml_predicted') }}">
+              🤖 {% if job.predicted_min %}{{ currency }}{{ "{:,.0f}".format(job.predicted_min) }}{% endif %}{% if job.predicted_max %}–{{ currency }}{{ "{:,.0f}".format(job.predicted_max) }}{% endif %}
+              {% if job.predicted_period == 'monthly' %}
+                /{{ t('lbl_mo') }}
+              {% else %}
+                /{{ t('lbl_yr') }}
+              {% endif %}
+              (ML)
             </span>
             {% endif %}
           </div>

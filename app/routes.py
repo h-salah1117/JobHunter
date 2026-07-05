@@ -49,6 +49,7 @@ def _enrich_salaries(jobs_list):
             if pred.get('salary_min') is not None:
                 j['predicted_min'] = pred['salary_min']
                 j['predicted_max'] = pred['salary_max']
+                j['predicted_period'] = pred.get('period', 'annual')
 
 
 # ── Dashboard ────────────────────────────────────────────────────────────────

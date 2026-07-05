@@ -223,6 +223,11 @@
         {% if job.predicted_min %}{{ currency }}{{ "{:,.0f}".format(job.predicted_min) }}{% endif %}
         {% if job.predicted_min and job.predicted_max %}–{% endif %}
         {% if job.predicted_max %}{{ currency }}{{ "{:,.0f}".format(job.predicted_max) }}{% endif %}
+        {% if job.predicted_period == 'monthly' %}
+          /{{ t('lbl_mo') }}
+        {% else %}
+          /{{ t('lbl_yr') }}
+        {% endif %}
         ({{ t('lbl_ml_predicted') }})
       </span>
       {% else %}

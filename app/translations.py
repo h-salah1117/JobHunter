@@ -58,6 +58,8 @@ TRANSLATIONS = {
         'lbl_hide': 'Hide',
         'lbl_details': 'Details ➔',
         'lbl_ml_predicted': 'ML Predicted',
+        'lbl_mo': 'mo',
+        'lbl_yr': 'yr',
         'err_no_jobs': 'No jobs matching criteria found.',
 
         # Recommender
@@ -183,6 +185,8 @@ TRANSLATIONS = {
         'lbl_hide': 'إخفاء',
         'lbl_details': 'التفاصيل ➔',
         'lbl_ml_predicted': 'توقع الذكاء الاصطناعي',
+        'lbl_mo': 'شهرياً',
+        'lbl_yr': 'سنوياً',
         'err_no_jobs': 'لم يتم العثور على وظائف تطابق معايير البحث.',
 
         # Recommender

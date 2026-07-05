@@ -61,7 +61,7 @@ COUNTRY_CONFIGS = {
     'Egypt': {
         'currency': 'EGP',
         'symbol': 'E£',
-        'scale_factor': 0.32,   # Tech salary relative to UK (32%)
+        'scale_factor': 0.08,   # Tech salary relative to UK (8% for local Egyptian market rates)
         'exchange_rate': 50.0,  # 1 USD = 50.0 EGP
     },
     'United Arab Emirates': {
@@ -296,6 +296,13 @@ def predict_salary(title: str, description: str, country: str, job_type: str, co
     local_min = pred_min_usd * config['scale_factor'] * config['exchange_rate']
     local_max = pred_max_usd * config['scale_factor'] * config['exchange_rate']
 
+    # For Egypt, tech salaries are customarily expressed monthly rather than annually
+    period = 'annual'
+    if norm_c == 'Egypt':
+        local_min = local_min / 12.0
+        local_max = local_max / 12.0
+        period = 'monthly'
+
     # Ensure min < max
     if local_min > local_max:
         local_min, local_max = local_max, local_min
@@ -306,6 +313,7 @@ def predict_salary(title: str, description: str, country: str, job_type: str, co
         'seniority': seniority,
         'currency': config['currency'],
         'symbol': config['symbol'],
+        'period': period,
     }
 
 

@@ -314,6 +314,15 @@ def api_refresh():
     return jsonify({'status': 'ok', 'message': msg})
 
 
+@main.route('/api/summarize-all', methods=['POST'])
+def api_summarize_all():
+    """Trigger continuous AI summarization backfill for all jobs in a background thread."""
+    import threading
+    from etl import run_etl
+    threading.Thread(target=run_etl, daemon=True).start()
+    return jsonify({'status': 'ok', 'message': 'Continuous AI summarization backfill started in the background.'})
+
+
 @main.route('/api/salary-predict', methods=['POST'])
 def api_salary_predict():
     """Predict salary range for a given job description."""

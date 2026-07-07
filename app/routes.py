@@ -103,6 +103,7 @@ def jobs():
     contract_type = request.args.get('contract_type', 'all')
     seniority     = request.args.get('seniority', 'all')
     search        = request.args.get('q', '').strip().lower()
+    sort          = request.args.get('sort', 'newest')
     try:
         page = int(request.args.get('page', 1))
     except (ValueError, TypeError):
@@ -114,6 +115,7 @@ def jobs():
         contract_type=contract_type if contract_type != 'all' else None,
         seniority=seniority if seniority != 'all' else None,
         search_query=search if search else None,
+        sort=sort
     )
 
     # Pagination logic
@@ -150,6 +152,7 @@ def jobs():
         selected_job_type=job_type,
         selected_contract=contract_type,
         selected_seniority=seniority,
+        selected_sort=sort,
         search_query=request.args.get('q', ''),
     )
 

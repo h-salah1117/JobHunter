@@ -77,11 +77,6 @@
               onclick="switchTab('cv', this)">
         {% if current_lang == 'ar' %}تقييم السيرة الذاتية{% else %}Rate CV &amp; Match{% endif %}
       </button>
-      <button type="button" class="tab-btn" role="tab" id="tab-btn-latex"
-              aria-controls="panel-latex" aria-selected="false"
-              onclick="switchTab('latex', this)">
-        {% if current_lang == 'ar' %}إنشاء سيرة ذاتية{% else %}Make CV{% endif %}
-      </button>
     </div>
 
     <!-- ══════ TAB 1: Manual Input ══════ -->
@@ -161,227 +156,12 @@
       </form>
     </div>
 
-    <!-- ══════ TAB 3: Make CV (LaTeX Builder) ══════ -->
-    <div id="panel-latex" role="tabpanel" aria-labelledby="tab-btn-latex" class="hidden">
-      <div class="flex items-center justify-between" style="margin-bottom:var(--space-4)">
-        <h2 class="section-label">
-          {% if current_lang == 'ar' %}إنشاء سيرة ذاتية (PDF &amp; LaTeX){% else %}Make CV (PDF &amp; LaTeX){% endif %}
-        </h2>
-        <button type="button" id="restore-preview-btn" class="btn btn-ghost btn-sm hidden"
-                onclick="shrinkFormCard()">
-          {% if current_lang == 'ar' %}◀ عرض المعاينة{% else %}◀ View Preview{% endif %}
-        </button>
-      </div>
-
-      <form id="latexForm" onsubmit="generateLatex(event)" class="flex flex-col gap-4">
-        <!-- Personal Info -->
-        <div class="flex flex-col gap-3">
-          <div class="cv-section-heading">
-            // {% if current_lang == 'ar' %}البيانات الشخصية{% else %}Personal Info{% endif %}
-          </div>
-          <input type="text" id="latex_name" placeholder="Full Name (الاسم بالكامل)"
-                 class="form-input" required aria-label="Full Name" />
-          <input type="text" id="latex_title" placeholder="Job Title (المسمى الوظيفي)"
-                 class="form-input" required aria-label="Job Title" />
-          <div class="grid grid-2 gap-3">
-            <input type="email" id="latex_email" placeholder="Email"
-                   class="form-input" required aria-label="Email" />
-            <input type="text" id="latex_phone" placeholder="Phone"
-                   class="form-input" required aria-label="Phone" />
-          </div>
-          <div class="grid grid-3 gap-3">
-            <input type="text" id="latex_location" placeholder="Location"
-                   class="form-input" required aria-label="Location" />
-            <input type="text" id="latex_linkedin" placeholder="LinkedIn username"
-                   class="form-input" aria-label="LinkedIn" />
-            <input type="text" id="latex_github" placeholder="GitHub username"
-                   class="form-input" aria-label="GitHub" />
-          </div>
-        </div>
-
-        <!-- Summary & Skills -->
-        <div class="flex flex-col gap-3">
-          <div class="cv-section-heading">
-            // {% if current_lang == 'ar' %}الملخص والمهارات{% else %}Summary &amp; Skills{% endif %}
-          </div>
-          <textarea id="latex_summary" rows="3"
-                    placeholder="Professional Summary (الملخص المهني)"
-                    class="form-textarea" required aria-label="Professional Summary"></textarea>
-          <textarea id="latex_skills" rows="3"
-                    placeholder="Key Skills (e.g. Python, SQL, Docker)"
-                    class="form-textarea" required aria-label="Key Skills"></textarea>
-        </div>
-
-        <!-- Latest Experience -->
-        <div class="flex flex-col gap-3">
-          <div class="cv-section-heading">
-            // {% if current_lang == 'ar' %}آخر خبرة عمل{% else %}Latest Experience{% endif %}
-          </div>
-          <div class="grid grid-3 gap-3">
-            <input type="text" id="latex_exp_company" placeholder="Company Name"
-                   class="form-input" required aria-label="Company" />
-            <input type="text" id="latex_exp_role" placeholder="Role (e.g. ML Engineer)"
-                   class="form-input" required aria-label="Role" />
-            <input type="text" id="latex_exp_dates" placeholder="Dates (e.g. 2023 - Present)"
-                   class="form-input" required aria-label="Dates" />
-          </div>
-          <textarea id="latex_exp_desc" rows="5"
-                    placeholder="Job Responsibilities (Enter each bullet on a new line)"
-                    class="form-textarea" required aria-label="Job responsibilities"></textarea>
-        </div>
-
-        <!-- Education -->
-        <div class="flex flex-col gap-3">
-          <div class="cv-section-heading">
-            // {% if current_lang == 'ar' %}التعليم{% else %}Education{% endif %}
-          </div>
-          <div class="grid grid-3 gap-3">
-            <input type="text" id="latex_edu_uni" placeholder="University"
-                   class="form-input" required aria-label="University" />
-            <input type="text" id="latex_edu_degree" placeholder="Degree (e.g. BSc in CS)"
-                   class="form-input" required aria-label="Degree" />
-            <input type="text" id="latex_edu_year" placeholder="Graduation Year (e.g. 2020)"
-                   class="form-input" required aria-label="Graduation Year" />
-          </div>
-        </div>
-
-        <button type="submit" class="btn btn-primary btn-lg w-full">
-          🚀 {% if current_lang == 'ar' %}توليد كود LaTeX{% else %}Generate LaTeX CV{% endif %}
-        </button>
-      </form>
-    </div>
-
   </section>
 
   <!-- ────────────────────────────────────────────────────
        RIGHT COLUMN — Results
        ──────────────────────────────────────────────────── -->
   <section id="results-column" class="rec-results-section flex flex-col gap-6">
-
-    <!-- ═══ LaTeX CV Result Card ═══ -->
-    <div id="latex-result-card" class="card hidden" style="position:relative;overflow:hidden;">
-      <!-- Accent top line -->
-      <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent),var(--secondary),transparent);"></div>
-
-      <!-- Header row -->
-      <div class="flex items-center justify-between" style="padding-bottom:var(--space-4);border-bottom:1px solid var(--border-subtle);margin-bottom:var(--space-4);">
-        <h3 class="font-bold" style="cursor:pointer;" onclick="toggleResultCardCollapse()"
-            aria-label="{% if current_lang == 'ar' %}طي/فتح بطاقة النتيجة{% else %}Collapse/expand result card{% endif %}">
-          📄 {% if current_lang == 'ar' %}السيرة الذاتية المحدثة{% else %}CV Output Console{% endif %}
-          <span id="result-collapse-icon" class="text-muted text-xs" style="transition:transform .3s;">▼</span>
-        </h3>
-        <div class="inline-actions">
-          <button id="download-pdf-btn" onclick="downloadPdf()" class="btn btn-primary btn-sm"
-                  aria-label="{% if current_lang == 'ar' %}تحميل PDF{% else %}Download PDF{% endif %}">
-            📥 {% if current_lang == 'ar' %}تحميل PDF{% else %}Download PDF{% endif %}
-          </button>
-          <button id="download-tex-btn" onclick="downloadLatexFile()" class="btn btn-secondary btn-sm"
-                  aria-label="{% if current_lang == 'ar' %}تحميل .tex{% else %}Download .tex{% endif %}">
-            💾 {% if current_lang == 'ar' %}تحميل .tex{% else %}Download .tex{% endif %}
-          </button>
-          <button id="copy-code-btn" onclick="copyLatexCode()" class="btn btn-ghost btn-sm"
-                  aria-label="{% if current_lang == 'ar' %}نسخ الكود{% else %}Copy Code{% endif %}">
-            📋 {% if current_lang == 'ar' %}نسخ الكود{% else %}Copy Code{% endif %}
-          </button>
-        </div>
-      </div>
-
-      <!-- Result body (collapsible) -->
-      <div id="latex-result-body" class="result-body">
-        <!-- Sub-tabs: PDF Preview / LaTeX Code -->
-        <div class="tab-group" role="tablist" style="width:fit-content;margin-bottom:var(--space-4);">
-          <button type="button" class="tab-btn active" role="tab" id="result-tab-preview"
-                  onclick="switchResultTab('preview', this)" aria-selected="true">
-            {% if current_lang == 'ar' %}معاينة الـ PDF 📄{% else %}PDF Preview 📄{% endif %}
-          </button>
-          <button type="button" class="tab-btn" role="tab" id="result-tab-code"
-                  onclick="switchResultTab('code', this)" aria-selected="false">
-            {% if current_lang == 'ar' %}كود LaTeX{% else %}LaTeX Code{% endif %}
-          </button>
-        </div>
-
-        <!-- Sub-tab: PDF Preview -->
-        <div id="result-preview-content" style="overflow-x:auto;padding:var(--space-4);background:var(--bg-inset);border-radius:var(--radius-lg);border:1px solid var(--border-subtle);">
-          <div id="resume-preview-page" class="resume-preview-page" style="direction: {% if current_lang == 'ar' %}rtl{% else %}ltr{% endif %}; text-align: {% if current_lang == 'ar' %}right{% else %}left{% endif %};">
-            <!-- Contact Info Header -->
-            <div style="text-align:center;margin-bottom:12pt;">
-              <h1 id="preview-name" style="font-size:20pt;font-weight:bold;margin:0 0 2pt 0;text-transform:uppercase;"></h1>
-              <div id="preview-title" style="font-size:12pt;font-weight:bold;margin-bottom:4pt;"></div>
-              <div id="preview-contact" style="font-size:10pt;margin-bottom:2pt;"></div>
-              <div id="preview-links" style="font-size:10pt;"></div>
-            </div>
-            <!-- Summary -->
-            <div style="margin-bottom:12pt;">
-              <h2 style="font-size:11.5pt;font-weight:bold;border-bottom:1.5px solid #000;padding-bottom:1pt;margin:0 0 4pt 0;text-transform:uppercase;">{% if current_lang == 'ar' %}الملخص المهني{% else %}Summary{% endif %}</h2>
-              <p id="preview-summary-text" style="margin:0;font-size:10.5pt;text-align:justify;"></p>
-            </div>
-            <!-- Skills -->
-            <div style="margin-bottom:12pt;">
-              <h2 style="font-size:11.5pt;font-weight:bold;border-bottom:1.5px solid #000;padding-bottom:1pt;margin:0 0 4pt 0;text-transform:uppercase;">{% if current_lang == 'ar' %}المهارات{% else %}Skills{% endif %}</h2>
-              <div style="font-size:10.5pt;margin:0;">
-                <strong>{% if current_lang == 'ar' %}التقنيات الأساسية:{% else %}Core Technologies:{% endif %}</strong> <span id="preview-skills-text"></span>
-              </div>
-            </div>
-            <!-- Experience -->
-            <div style="margin-bottom:12pt;">
-              <h2 style="font-size:11.5pt;font-weight:bold;border-bottom:1.5px solid #000;padding-bottom:1pt;margin:0 0 4pt 0;text-transform:uppercase;">{% if current_lang == 'ar' %}الخبرة المهنية{% else %}Experience{% endif %}</h2>
-              <div style="margin-bottom:6pt;">
-                <table style="width:100%;border-collapse:collapse;margin-bottom:2pt;">
-                  <tr>
-                    <td id="preview-exp-company" style="font-weight:bold;font-size:10.5pt;text-align: {% if current_lang == 'ar' %}right{% else %}left{% endif %};padding:0;"></td>
-                    <td id="preview-exp-dates" style="font-weight:bold;font-size:10.5pt;text-align: {% if current_lang == 'ar' %}left{% else %}right{% endif %};padding:0;"></td>
-                  </tr>
-                </table>
-                <div id="preview-exp-role" style="font-style:italic;font-size:10.5pt;margin-bottom:4pt;"></div>
-                <ul id="preview-exp-bullets" style="list-style-type:disc;margin:0;padding-left:18pt;padding-right:18pt;font-size:10pt;line-height:1.4;"></ul>
-              </div>
-            </div>
-            <!-- Education -->
-            <div style="margin-bottom:12pt;">
-              <h2 style="font-size:11.5pt;font-weight:bold;border-bottom:1.5px solid #000;padding-bottom:1pt;margin:0 0 4pt 0;text-transform:uppercase;">{% if current_lang == 'ar' %}التعليم{% else %}Education{% endif %}</h2>
-              <div>
-                <table style="width:100%;border-collapse:collapse;margin-bottom:2pt;">
-                  <tr>
-                    <td id="preview-edu-uni" style="font-weight:bold;font-size:10.5pt;text-align: {% if current_lang == 'ar' %}right{% else %}left{% endif %};padding:0;"></td>
-                    <td id="preview-edu-year" style="font-weight:bold;font-size:10.5pt;text-align: {% if current_lang == 'ar' %}left{% else %}right{% endif %};padding:0;"></td>
-                  </tr>
-                </table>
-                <div id="preview-edu-degree" style="font-style:italic;font-size:10.5pt;"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Sub-tab: LaTeX Code -->
-        <div id="result-code-content" class="hidden">
-          <textarea id="latex-code-box" class="form-textarea text-mono" readonly
-                    style="height:280px;resize:none;background:var(--bg-inset);font-size:var(--text-xs);"
-                    aria-label="LaTeX source code"></textarea>
-
-          <!-- Compilation guide -->
-          <div class="card" style="margin-top:var(--space-4);border-color:var(--accent-muted);background:var(--accent-subtle);">
-            <h4 class="text-accent font-bold text-sm" style="margin-bottom:var(--space-2)">
-              💡 {% if current_lang == 'ar' %}طريقة استخدامه للحصول على 100% ATS{% else %}How to Use for 100% ATS Score{% endif %}
-            </h4>
-            <ol class="guide-list text-sm text-muted">
-              {% if current_lang == 'ar' %}
-                <li>دوس على زرار <strong>نسخ الكود</strong> أو <strong>تحميل .tex</strong>.</li>
-                <li>افتح موقع <a href="https://www.overleaf.com" target="_blank" class="text-accent">Overleaf.com</a> (سجل دخول مجاني).</li>
-                <li>اعمل مشروع جديد فاضي (New Project -&gt; Blank Project).</li>
-                <li>امسح كل المكتوب هناك، واعمل لصق (Paste) للكود اللي هنا.</li>
-                <li>دوس على زرار <strong>Recompile</strong> وحمل ملف الـ PDF الجاهز.</li>
-              {% else %}
-                <li>Click <strong>Copy Code</strong> or <strong>Download .tex</strong>.</li>
-                <li>Open <a href="https://www.overleaf.com" target="_blank" class="text-accent">Overleaf.com</a> (free registration).</li>
-                <li>Create a new Blank Project.</li>
-                <li>Paste this code into the editor, replacing everything.</li>
-                <li>Click <strong>Recompile</strong> and download the compiled PDF.</li>
-              {% endif %}
-            </ol>
-          </div>
-        </div>
-      </div>
-    </div>
 
     <!-- ═══ ATS Score Card ═══ -->
     {% if scanned_cv and ats_analysis %}
@@ -546,7 +326,7 @@
           </div>
 
           <div class="inline-actions" style="margin-top:var(--space-3)">
-            <button onclick="togglePreview('rec-{{ loop.index }}', this)" class="btn btn-ghost btn-sm"
+            <button onclick="togglePreview('preview-rec-{{ loop.index }}', this)" class="btn btn-ghost btn-sm"
                     aria-label="{{ t('lbl_preview') }}">
               {{ t('lbl_preview') }}
             </button>
@@ -578,7 +358,7 @@
 <script>
   /* ─── Tab Switching ─── */
   function switchTab(name, btn) {
-    var panels = ['manual', 'cv', 'latex'];
+    var panels = ['manual', 'cv'];
     panels.forEach(function(id) {
       var panel = document.getElementById('panel-' + id);
       var tabBtn = document.getElementById('tab-btn-' + id);
@@ -593,358 +373,7 @@
         tabBtn.setAttribute('aria-selected', 'false');
       }
     });
-
-    var resCard = document.getElementById('latex-result-card');
-    var layout = document.getElementById('rec-layout');
-    var resultsCol = document.getElementById('results-column');
-
-    if (name === 'latex') {
-      var codeBox = document.getElementById('latex-code-box');
-      if (codeBox && codeBox.value.trim() !== '') {
-        shrinkFormCard();
-      } else {
-        expandFormCard();
-        var restoreBtn = document.getElementById('restore-preview-btn');
-        if (restoreBtn) restoreBtn.classList.add('hidden');
-      }
-    } else {
-      if (resCard) resCard.classList.add('hidden');
-      // Restore standard 2-col layout
-      if (layout) layout.classList.remove('rec-layout--wide');
-      if (resultsCol) resultsCol.classList.remove('hidden');
-    }
-
     sessionStorage.setItem('active_recommend_tab', name);
-  }
-
-  /* ─── Layout Expansion (Make CV full-width before compilation) ─── */
-  function expandFormCard() {
-    var activeTab = sessionStorage.getItem('active_recommend_tab') || 'manual';
-    if (activeTab !== 'latex') return;
-
-    var layout = document.getElementById('rec-layout');
-    var resultsCol = document.getElementById('results-column');
-    if (layout) layout.classList.add('rec-layout--wide');
-    if (resultsCol) resultsCol.classList.add('hidden');
-
-    var codeBox = document.getElementById('latex-code-box');
-    var restoreBtn = document.getElementById('restore-preview-btn');
-    if (codeBox && codeBox.value.trim() !== '' && restoreBtn) {
-      restoreBtn.classList.remove('hidden');
-    }
-  }
-
-  function shrinkFormCard() {
-    var layout = document.getElementById('rec-layout');
-    var resultsCol = document.getElementById('results-column');
-    var resCard = document.getElementById('latex-result-card');
-    var restoreBtn = document.getElementById('restore-preview-btn');
-
-    if (layout) layout.classList.remove('rec-layout--wide');
-    if (resultsCol) resultsCol.classList.remove('hidden');
-    if (resCard) resCard.classList.remove('hidden');
-    if (restoreBtn) restoreBtn.classList.add('hidden');
-  }
-
-  /* ─── Result Sub-tab Switching ─── */
-  function switchResultTab(name, btn) {
-    var previewContent = document.getElementById('result-preview-content');
-    var codeContent = document.getElementById('result-code-content');
-    var previewBtn = document.getElementById('result-tab-preview');
-    var codeBtn = document.getElementById('result-tab-code');
-
-    if (name === 'preview') {
-      if (previewContent) previewContent.classList.remove('hidden');
-      if (codeContent) codeContent.classList.add('hidden');
-      if (previewBtn) { previewBtn.classList.add('active'); previewBtn.setAttribute('aria-selected','true'); }
-      if (codeBtn) { codeBtn.classList.remove('active'); codeBtn.setAttribute('aria-selected','false'); }
-    } else {
-      if (previewContent) previewContent.classList.add('hidden');
-      if (codeContent) codeContent.classList.remove('hidden');
-      if (codeBtn) { codeBtn.classList.add('active'); codeBtn.setAttribute('aria-selected','true'); }
-      if (previewBtn) { previewBtn.classList.remove('active'); previewBtn.setAttribute('aria-selected','false'); }
-    }
-  }
-
-  /* ─── Result Card Collapse ─── */
-  function toggleResultCardCollapse() {
-    var body = document.getElementById('latex-result-body');
-    var icon = document.getElementById('result-collapse-icon');
-    if (!body) return;
-    if (body.classList.contains('collapsed')) {
-      body.classList.remove('collapsed');
-      if (icon) { icon.style.transform = 'rotate(0deg)'; icon.textContent = '▼'; }
-    } else {
-      body.classList.add('collapsed');
-      if (icon) { icon.style.transform = 'rotate(-90deg)'; icon.textContent = '◀'; }
-    }
-  }
-
-  /* ─── Job Description Toggle ─── */
-  function togglePreview(jobId, btn) {
-    var el = document.getElementById('preview-' + jobId);
-    if (!el) return;
-    if (el.classList.contains('hidden')) {
-      el.classList.remove('hidden');
-      btn.textContent = "{{ t('lbl_hide') }}";
-    } else {
-      el.classList.add('hidden');
-      btn.textContent = "{{ t('lbl_preview') }}";
-    }
-  }
-
-  /* ─── LaTeX Generator ─── */
-  function generateLatex(e) {
-    if (e) e.preventDefault();
-    shrinkFormCard();
-
-    var name     = document.getElementById('latex_name').value.trim();
-    var title    = document.getElementById('latex_title').value.trim();
-    var email    = document.getElementById('latex_email').value.trim();
-    var phone    = document.getElementById('latex_phone').value.trim();
-    var loc      = document.getElementById('latex_location').value.trim();
-    var linkedin = document.getElementById('latex_linkedin').value.trim();
-    var github   = document.getElementById('latex_github').value.trim();
-    var summary  = document.getElementById('latex_summary').value.trim();
-    var skills   = document.getElementById('latex_skills').value.trim();
-    var expCompany = document.getElementById('latex_exp_company').value.trim();
-    var expRole    = document.getElementById('latex_exp_role').value.trim();
-    var expDates   = document.getElementById('latex_exp_dates').value.trim();
-    var expDesc    = document.getElementById('latex_exp_desc').value.trim();
-    var eduUni     = document.getElementById('latex_edu_uni').value.trim();
-    var eduDegree  = document.getElementById('latex_edu_degree').value.trim();
-    var eduYear    = document.getElementById('latex_edu_year').value.trim();
-
-    // Parse bullet points
-    var bullets = expDesc.split('\n').map(function(b){ return b.trim(); }).filter(function(b){ return b.length > 0; });
-    var latexBullets = '';
-    if (bullets.length > 0) {
-      latexBullets = bullets.map(function(b){ return '    \\item ' + b; }).join('\n');
-    } else {
-      latexBullets = '    \\item Worked on multiple core software engineering projects.';
-    }
-
-    // Escape LaTeX special characters
-    function escapeLatex(str) {
-      if (!str) return '';
-      return str
-        .replace(/\\/g, '\\textbackslash ')
-        .replace(/&/g, '\\&')
-        .replace(/%/g, '\\%')
-        .replace(/\$/g, '\\$')
-        .replace(/#/g, '\\#')
-        .replace(/_/g, '\\_')
-        .replace(/{/g, '\\{')
-        .replace(/}/g, '\\}')
-        .replace(/~/g, '\\textasciitilde ')
-        .replace(/\^/g, '\\textasciicircum ');
-    }
-
-    var currentLang = "{{ current_lang }}";
-    var labelSummary = (currentLang === 'ar') ? 'الملخص المهني' : 'Summary';
-    var labelSkills = (currentLang === 'ar') ? 'المهارات' : 'Skills';
-    var labelCoreTech = (currentLang === 'ar') ? 'التقنيات الأساسية:' : 'Core Technologies:';
-    var labelExperience = (currentLang === 'ar') ? 'الخبرة المهنية' : 'Experience';
-    var labelEducation = (currentLang === 'ar') ? 'التعليم' : 'Education';
-
-    var latexTemplate = '\\documentclass[letterpaper,10pt]{article}\n'
-      + ((currentLang === 'ar') ? '% Compile with XeLaTeX for proper Arabic rendering\n\\usepackage{fontspec}\n\\newfontfamily\\arabicfont[Script=Arabic]{Amiri}\n' : '')
-      + '\\usepackage[utf8]{inputenc}\n'
-      + '\\usepackage{geometry}\n'
-      + '\\geometry{left=0.75in, top=0.75in, right=0.75in, bottom=0.75in}\n'
-      + '\\usepackage{enumitem}\n'
-      + '\\usepackage{hyperref}\n\n'
-      + '\\pagestyle{empty}\n'
-      + '\\urlstyle{same}\n\n'
-      + '\\begin{document}\n\n'
-      + '\\begin{center}\n'
-      + '    {\\LARGE \\textbf{' + escapeLatex(name) + '}} \\\\\\\\\n'
-      + '    \\vspace{2pt}\n'
-      + '    ' + escapeLatex(title) + ' \\\\\\\\\n'
-      + '    \\vspace{2pt}\n'
-      + '    ' + escapeLatex(email) + ' ~|~ ' + escapeLatex(phone) + ' ~|~ ' + escapeLatex(loc) + ' \\\\\\\\\n'
-      + '    \\vspace{2pt}\n'
-      + '    \\href{https://github.com/' + escapeLatex(github) + '}{GitHub: ' + escapeLatex(github) + '} ~|~ '
-      + '\\href{https://linkedin.com/in/' + escapeLatex(linkedin) + '}{LinkedIn: ' + escapeLatex(linkedin) + '}\n'
-      + '\\end{center}\n\n'
-      + '\\vspace{5pt}\n\n'
-      + '\\section*{' + labelSummary + '}\n'
-      + escapeLatex(summary) + '\n\n'
-      + '\\vspace{5pt}\n\n'
-      + '\\section*{' + labelSkills + '}\n'
-      + '\\textbf{' + labelCoreTech + '} ' + escapeLatex(skills) + '\n\n'
-      + '\\vspace{5pt}\n\n'
-      + '\\section*{' + labelExperience + '}\n'
-      + '\\textbf{' + escapeLatex(expCompany) + '} \\hfill ' + escapeLatex(expDates) + ' \\\\\\\\\n'
-      + '\\textit{' + escapeLatex(expRole) + '}\n'
-      + '\\begin{itemize}[leftmargin=*, noitemsep, topsep=2pt]\n'
-      + latexBullets + '\n'
-      + '\\end{itemize}\n\n'
-      + '\\vspace{5pt}\n\n'
-      + '\\section*{' + labelEducation + '}\n'
-      + '\\textbf{' + escapeLatex(eduUni) + '} \\hfill ' + escapeLatex(eduYear) + ' \\\\\\\\\n'
-      + '\\textit{' + escapeLatex(eduDegree) + '}\n\n'
-      + '\\end{document}\n';
-
-    var codeBox = document.getElementById('latex-code-box');
-    if (codeBox) codeBox.value = latexTemplate;
-
-    // Update PDF preview
-    var pName = document.getElementById('preview-name');
-    var pTitle = document.getElementById('preview-title');
-    var pContact = document.getElementById('preview-contact');
-    var pLinks = document.getElementById('preview-links');
-    var pSummary = document.getElementById('preview-summary-text');
-    var pSkills = document.getElementById('preview-skills-text');
-    var pExpCompany = document.getElementById('preview-exp-company');
-    var pExpDates = document.getElementById('preview-exp-dates');
-    var pExpRole = document.getElementById('preview-exp-role');
-    var pExpBullets = document.getElementById('preview-exp-bullets');
-    var pEduUni = document.getElementById('preview-edu-uni');
-    var pEduYear = document.getElementById('preview-edu-year');
-    var pEduDegree = document.getElementById('preview-edu-degree');
-
-    if (pName) pName.textContent = name;
-    if (pTitle) pTitle.textContent = title;
-    if (pContact) pContact.textContent = email + '  |  ' + phone + '  |  ' + loc;
-
-    if (pLinks) {
-      var linksHtml = '';
-      if (github) linksHtml += '<a href="https://github.com/' + github + '" target="_blank" style="text-decoration:none;font-weight:bold;">GitHub: ' + github + '</a>';
-      if (linkedin) {
-        if (linksHtml) linksHtml += '   |   ';
-        linksHtml += '<a href="https://linkedin.com/in/' + linkedin + '" target="_blank" style="text-decoration:none;font-weight:bold;">LinkedIn: ' + linkedin + '</a>';
-      }
-      pLinks.innerHTML = linksHtml;
-    }
-
-    if (pSummary) pSummary.textContent = summary;
-    if (pSkills) pSkills.textContent = skills;
-    if (pExpCompany) pExpCompany.textContent = expCompany;
-    if (pExpDates) pExpDates.textContent = expDates;
-    if (pExpRole) pExpRole.textContent = expRole;
-
-    if (pExpBullets) {
-      pExpBullets.innerHTML = '';
-      bullets.forEach(function(b) {
-        var li = document.createElement('li');
-        li.textContent = b;
-        li.style.marginBottom = '2px';
-        pExpBullets.appendChild(li);
-      });
-    }
-
-    if (pEduUni) pEduUni.textContent = eduUni;
-    if (pEduYear) pEduYear.textContent = eduYear;
-    if (pEduDegree) pEduDegree.textContent = eduDegree;
-
-    // Show result card with PDF Preview sub-tab active
-    var previewBtn = document.getElementById('result-tab-preview');
-    if (previewBtn) switchResultTab('preview', previewBtn);
-
-    var resCard = document.getElementById('latex-result-card');
-    if (resCard) {
-      resCard.classList.remove('hidden');
-      resCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-
-    showToast("{% if current_lang == 'ar' %}تم توليد السيرة الذاتية بنجاح!{% else %}CV compiled successfully!{% endif %}");
-  }
-
-  /* ─── Copy LaTeX Code ─── */
-  function copyLatexCode() {
-    var codeBox = document.getElementById('latex-code-box');
-    if (!codeBox) return;
-    var text = codeBox.value;
-
-    if (navigator.clipboard && window.isSecureContext) {
-      navigator.clipboard.writeText(text).then(function() {
-        showToast("{% if current_lang == 'ar' %}تم نسخ كود LaTeX للحافظة بنجاح!{% else %}LaTeX code copied to clipboard!{% endif %}");
-      }).catch(function() {
-        fallbackCopyText(text);
-      });
-    } else {
-      fallbackCopyText(text);
-    }
-  }
-
-  function fallbackCopyText(text) {
-    try {
-      var el = document.createElement('textarea');
-      el.value = text;
-      el.style.position = 'fixed';
-      el.style.top = '0';
-      el.style.left = '0';
-      el.style.width = '2em';
-      el.style.height = '2em';
-      el.style.padding = '0';
-      el.style.border = 'none';
-      el.style.outline = 'none';
-      el.style.boxShadow = 'none';
-      el.style.background = 'transparent';
-      document.body.appendChild(el);
-      el.focus();
-      el.select();
-      el.setSelectionRange(0, 99999);
-      var successful = document.execCommand('copy');
-      document.body.removeChild(el);
-      if (successful) {
-        showToast("{% if current_lang == 'ar' %}تم نسخ كود LaTeX للحافظة بنجاح!{% else %}LaTeX code copied to clipboard!{% endif %}");
-      } else {
-        showToast("{% if current_lang == 'ar' %}فشل نسخ الكود، يرجى نسخه يدوياً.{% else %}Failed to copy code. Please copy it manually.{% endif %}", true);
-      }
-    } catch (err) {
-      showToast("{% if current_lang == 'ar' %}فشل نسخ الكود، يرجى نسخه يدوياً.{% else %}Failed to copy code. Please copy it manually.{% endif %}", true);
-    }
-  }
-
-  /* ─── Download .tex (Blob URL) ─── */
-  function downloadLatexFile() {
-    var codeBox = document.getElementById('latex-code-box');
-    if (!codeBox) return;
-    try {
-      var blob = new Blob([codeBox.value], { type: 'text/plain;charset=utf-8' });
-      var url = URL.createObjectURL(blob);
-      var link = document.createElement('a');
-      link.href = url;
-      link.download = 'resume.tex';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-      showToast("{% if current_lang == 'ar' %}تم تحميل ملف .tex بنجاح!{% else %}Downloaded .tex file successfully!{% endif %}");
-    } catch (err) {
-      showToast("{% if current_lang == 'ar' %}فشل تحميل الملف.{% else %}Failed to download file.{% endif %}", true);
-    }
-  }
-
-  /* ─── Download PDF (html2pdf.js) ─── */
-  function downloadPdf() {
-    var element = document.getElementById('resume-preview-page');
-    if (!element) return;
-
-    if (typeof html2pdf === 'undefined') {
-      showToast("{% if current_lang == 'ar' %}مكتبة PDF غير محملة بعد.{% else %}PDF library is not loaded yet.{% endif %}", true);
-      return;
-    }
-
-    var nameVal = document.getElementById('latex_name').value.trim() || 'resume';
-    var filename = nameVal.replace(/\s+/g, '_') + '_CV.pdf';
-
-    var opt = {
-      margin:       0,
-      filename:     filename,
-      image:        { type: 'jpeg', quality: 0.98 },
-      html2canvas:  { scale: 2.5, useCORS: true, logging: false },
-      jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
-    };
-
-    try {
-      showToast("{% if current_lang == 'ar' %}جاري إعداد وتحميل ملف الـ PDF...{% else %}Preparing and downloading PDF...{% endif %}");
-      html2pdf().set(opt).from(element).save();
-    } catch (err) {
-      showToast("{% if current_lang == 'ar' %}فشل تحميل ملف الـ PDF.{% else %}Failed to download PDF.{% endif %}", true);
-    }
   }
 
   /* ─── Dropzone Drag & Drop ─── */
@@ -984,20 +413,21 @@
     }
   }
 
-  /* ─── Form Expansion on Focus (Make CV tab) ─── */
-  function initFormExpansion() {
-    var latexForm = document.getElementById('latexForm');
-    if (!latexForm) return;
-    var inputs = latexForm.querySelectorAll('input, textarea');
-    inputs.forEach(function(inp) {
-      inp.addEventListener('focus', expandFormCard);
-    });
+  /* ─── Job Description Toggle ─── */
+  function togglePreview(jobId, btn) {
+    var el = document.getElementById(jobId);
+    if (!el) return;
+    if (el.classList.contains('hidden')) {
+      el.classList.remove('hidden');
+      btn.textContent = "{{ t('lbl_hide') }}";
+    } else {
+      el.classList.add('hidden');
+      btn.textContent = "{{ t('lbl_preview') }}";
+    }
   }
 
   /* ─── Init on DOM Ready ─── */
   document.addEventListener('DOMContentLoaded', function() {
-    initFormExpansion();
-
     {% if error_message %}
       showToast("{{ error_message }}", "error");
     {% endif %}

@@ -363,14 +363,12 @@ def summarize_description(description: str) -> tuple[str, str]:
     # Clean description briefly to avoid sending excessive junk
     cleaned_desc = description[:3000] # Limit input characters to save tokens
 
-    prompt = (
-        "You are an expert career assistant. Analyze the following job description and provide a simplified summary in BOTH English and Egyptian Arabic (slang) as 2-3 concise bullet points (under 60 words each).\n\n"
-        "You MUST return ONLY a valid JSON object (no markdown code blocks, no extra text) containing exactly these two keys:\n"
-        '- "summary_en": a bulleted list of 2-3 key points in English (using "-" as bullets).\n'
-        '- "summary_ar": a bulleted list of 2-3 key points in friendly, warm Egyptian Arabic slang (لهجة مصرية عامية جميلة ومحببة، باستخدام "-" كعلامة تعداد نقطي).\n\n'
-        "Job Description:\n"
-        f"{cleaned_desc}\n"
-    )
+    prompt = f"""Summarize this job description in 2-3 sentences each.
+Return ONLY a valid raw JSON object with exactly these two keys, no markdown, no extra text:
+{{"summary_en": "...", "summary_ar": "..."}}
+
+Job description:
+{cleaned_desc}"""
 
     try:
         messages = [

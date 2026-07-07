@@ -182,6 +182,7 @@ def fetch_all_jobs(
     contract_type: str = None,
     seniority: str = None,
     search_query: str = None,
+    sort: str = 'newest',
     limit: int = 500,
 ) -> list[dict]:
     conn = get_connection()
@@ -211,7 +212,14 @@ def fetch_all_jobs(
         query += ' AND (j.title LIKE ? OR co.name LIKE ?)'
         params.extend([f'%{search_query}%', f'%{search_query}%'])
 
-    query += ' ORDER BY j.scraped_at DESC LIMIT ?'
+    if sort == 'salary_high':
+        query += ' ORDER BY coalesce(j.salary_max, j.predicted_max, 0) DESC'
+    elif sort == 'salary_low':
+        query += ' ORDER BY coalesce(j.salary_min, j.predicted_min, 9999999) ASC'
+    else:
+        query += ' ORDER BY j.scraped_at DESC'
+        
+    query += ' LIMIT ?'
     params.append(limit)
 
     c.execute(query, params)

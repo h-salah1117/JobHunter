@@ -131,6 +131,15 @@
       </select>
     </div>
 
+    {# Sort #}
+    <div class="filter-field">
+      <select name="sort" class="form-select" id="filterSort" aria-label="{{ t('lbl_sort') }}">
+        <option value="newest" {% if selected_sort == 'newest' %}selected{% endif %}>{{ t('sort_newest') }}</option>
+        <option value="salary_high" {% if selected_sort == 'salary_high' %}selected{% endif %}>{{ t('sort_salary_high') }}</option>
+        <option value="salary_low" {% if selected_sort == 'salary_low' %}selected{% endif %}>{{ t('sort_salary_low') }}</option>
+      </select>
+    </div>
+
     {# Actions #}
     <div class="filter-actions">
       <button type="submit" class="btn btn-primary btn-sm">{{ t('btn_filter') }}</button>
@@ -245,8 +254,10 @@
                 class="btn btn-ghost btn-sm"
                 aria-expanded="false"
                 aria-controls="preview-{{ loop.index }}"
-                id="toggle-btn-{{ loop.index }}">
-          {{ t('lbl_preview') }}
+                id="toggle-btn-{{ loop.index }}"
+                data-label-show="{{ t('btn_show_summary') }}"
+                data-label-hide="{{ t('btn_hide_summary') }}">
+          {{ t('btn_show_summary') }}
         </button>
         {% if job.source_url %}
         <a href="{{ job.source_url }}" target="_blank" rel="noopener noreferrer"
@@ -322,13 +333,16 @@
   function togglePreview(jobIndex, btn) {
     var el = document.getElementById('preview-' + jobIndex);
     var isHidden = el.classList.contains('hidden');
+    var labelShow = btn.getAttribute('data-label-show');
+    var labelHide = btn.getAttribute('data-label-hide');
+    
     if (isHidden) {
       el.classList.remove('hidden');
-      btn.textContent = "{{ t('lbl_hide') }}";
+      btn.textContent = labelHide;
       btn.setAttribute('aria-expanded', 'true');
     } else {
       el.classList.add('hidden');
-      btn.textContent = "{{ t('lbl_preview') }}";
+      btn.textContent = labelShow;
       btn.setAttribute('aria-expanded', 'false');
     }
   }

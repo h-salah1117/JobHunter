@@ -129,6 +129,22 @@ TRANSLATIONS = {
         'lbl_ats_tips': 'Improvement Tips',
         'lbl_best_matches': 'Best Matching Jobs',
         'lbl_recommended': 'Recommended Jobs',
+
+        # New Landing Page & Jobs UI
+        'hero_tagline':    'Find Your Next Data Science Role',
+        'hero_subtitle':   'AI-powered job aggregator that scrapes, summarizes and matches jobs — in English and Arabic.',
+        'how_step1_title': 'Live Job Scraping',
+        'how_step1_desc':  'Jobs pulled daily from Adzuna, JobSpy & Wuzzuf.',
+        'how_step2_title': 'AI Summarization',
+        'how_step2_desc':  'Every job is summarized in English and Arabic using AI.',
+        'how_step3_title': 'Smart Matching',
+        'how_step3_desc':  'Upload your CV or enter skills — we rank the best matches.',
+        'btn_show_summary': 'Show Summary',
+        'btn_hide_summary': 'Hide Summary',
+        'lbl_sort':         'Sort by',
+        'sort_newest':      'Newest First',
+        'sort_salary_high': 'Highest Salary',
+        'sort_salary_low':  'Lowest Salary',
     },
     'ar': {
         # Navigation
@@ -256,5 +272,21 @@ TRANSLATIONS = {
         'lbl_ats_tips': 'نصائح للتحسين',
         'lbl_best_matches': 'أفضل الوظائف المطابقة',
         'lbl_recommended': 'الوظائف المقترحة',
+
+        # New Landing Page & Jobs UI
+        'hero_tagline':    'ابحث عن وظيفتك القادمة في علم البيانات',
+        'hero_subtitle':   'منصة ذكية تجمع الوظائف وتلخصها وتطابقها مع مهاراتك — بالعربي والإنجليزي.',
+        'how_step1_title': 'جمع الوظائف لحظياً',
+        'how_step1_desc':  'وظائف يومية من Adzuna و JobSpy و Wuzzuf.',
+        'how_step2_title': 'تلخيص بالذكاء الاصطناعي',
+        'how_step2_desc':  'كل وظيفة يتم تلخيصها بالعربي والإنجليزي بالذكاء الاصطناعي.',
+        'how_step3_title': 'مطابقة ذكية',
+        'how_step3_desc':  'ارفع سيرتك الذاتية أو أدخل مهاراتك — نرتب أفضل وظيفة ليك.',
+        'btn_show_summary': 'عرض الملخص',
+        'btn_hide_summary': 'إخفاء الملخص',
+        'lbl_sort':         'ترتيب حسب',
+        'sort_newest':      'الأحدث أولاً',
+        'sort_salary_high': 'أعلى راتب',
+        'sort_salary_low':  'أدنى راتب',
     }
 }

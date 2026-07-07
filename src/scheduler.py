@@ -32,10 +32,23 @@ def _refresh_job():
     try:
         from pipeline import run as pipeline_run
         for country in COUNTRIES:
-            for keyword in SEARCH_KEYWORDS[:3]:   # limit to avoid rate limits
+            for keyword in SEARCH_KEYWORDS[:3]:
                 pipeline_run(keyword, country, PAGES_PER_RUN)
     except Exception as e:
         logging.info(f'[Scheduler] pipeline error: {e}')
+
+    try:
+        from jobspy_scraper import run as jobspy_run
+        jobspy_run(SEARCH_KEYWORDS[:5])
+    except Exception as e:
+        logging.info(f'[Scheduler] jobspy error: {e}')
+
+    try:
+        from wuzzuf_scraper import run as wuzzuf_run
+        for kw in SEARCH_KEYWORDS[:3]:
+            wuzzuf_run(keywords=kw, pages=2)
+    except Exception as e:
+        logging.info(f'[Scheduler] wuzzuf error: {e}')
 
     try:
         from etl import run_etl
@@ -44,29 +57,11 @@ def _refresh_job():
         logging.info(f'[Scheduler] etl error: {e}')
 
     try:
-        import subprocess
-        import sys
-        script_path = os.path.join(os.path.dirname(__file__), 'social_scraper.py')
-        logging.info(f'[Scheduler] Running social scraper as subprocess: {script_path}')
-        subprocess.run(
-            [sys.executable, '-u', script_path] + SEARCH_KEYWORDS,
-            timeout=120,
-            check=True
-        )
-    except subprocess.TimeoutExpired:
-        logging.info('[Scheduler] Social scraper timed out after 120 seconds. Skipping.')
-    except Exception as e:
-        logging.info(f'[Scheduler] social scraper error: {e}')
-
-
-    # Week 3: update seniority for new jobs
-    try:
         from salary_model import update_job_seniority, train_salary_models
         update_job_seniority()
     except Exception as e:
         logging.info(f'[Scheduler] seniority update error: {e}')
 
-    # Week 3: retrain salary model if enough new salary data
     try:
         from database import get_connection
         conn = get_connection()
@@ -75,18 +70,17 @@ def _refresh_job():
         salary_count = c.fetchone()[0]
         conn.close()
         if salary_count >= 50:
+            from salary_model import train_salary_models
             train_salary_models()
     except Exception as e:
         logging.info(f'[Scheduler] salary retrain error: {e}')
 
-    # Sync all new jobs into ChromaDB vector database
     try:
         from rag_assistant import index_new_jobs
         index_new_jobs()
     except Exception as e:
         logging.info(f'[Scheduler] ChromaDB indexing error: {e}')
 
-    # Sync database to Hugging Face Dataset (Week 4 persistent storage)
     try:
         from hf_sync import upload_db_to_hf
         upload_db_to_hf()
@@ -119,7 +113,7 @@ def _auto_backfill_summaries_job():
               AND description IS NOT NULL
               AND description != ''
               AND datetime(coalesce(posted_at, scraped_at)) >= datetime('now', '-30 days')
-            LIMIT 40
+            LIMIT 10
         ''')
         rows = c.fetchall()
         conn.close()
@@ -147,7 +141,7 @@ def _auto_backfill_summaries_job():
             if summary_en and summary_ar:
                 update_job_summaries(job_id, summary_en, summary_ar)
                 success_count += 1
-                time.sleep(0.5)  # respect rate limits
+                time.sleep(2)  # respect rate limits
             else:
                 logging.info(f"[Scheduler] Empty summary returned for job ID {job_id}.")
         except Exception as e:

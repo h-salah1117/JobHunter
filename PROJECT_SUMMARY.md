@@ -1,4 +1,4 @@
-﻿# JobHunter — Complete Project Reference
+# JobHunter — Complete Project Reference
 > **Read this file first.** Self-contained reference for the entire project. Last updated: 2026-07-05.
 
 ---
@@ -75,8 +75,10 @@ JobHunter/
 | `REFRESH_HOURS` | Auto-refresh interval (default `6`) |
 | `SECRET_KEY` | Flask session secret |
 | `HF_TOKEN` or `HF_API_TOKEN` | Hugging Face token — enables serverless Inference API |
-| `HF_API_MODEL` | Override HF serverless model (default: `Qwen/Qwen2.5-72B-Instruct`) |
-| `HF_LOCAL_MODEL` | Override local fallback model (default: `Qwen/Qwen2.5-0.5B-Instruct`) |
+| `HF_API_MODEL_CHAT` | API model for chat / coaching (default: `Qwen/Qwen2.5-72B-Instruct`) |
+| `HF_API_MODEL_SUMMARY` | API model for summarization (default: `meta-llama/Llama-3.2-3B-Instruct`) |
+| `HF_LOCAL_MODEL_CHAT` | Local model for chat (default: `Qwen/Qwen2.5-0.5B-Instruct`) |
+| `HF_LOCAL_MODEL_SUMMARY` | Local model for summarization (default: `Qwen/Qwen2.5-0.5B-Instruct`) |
 | `GROQ_API_KEY` (legacy) | No longer used by the app — can be removed |
 
 ---
@@ -147,9 +149,10 @@ job_skills (job_id -> jobs, skill_id -> skills, tfidf_score, PRIMARY KEY(job_id,
 - **Vector store:** ChromaDB persistent at `data/chroma_db/`, collection `jobhunter_jobs`, cosine similarity
 - `index_new_jobs(reindex=False)` — syncs SQLite jobs to ChromaDB, prunes >30-day-old entries
 - `search_jobs(query_text, limit=4)` — semantic nearest-neighbor search
-- **LLM routing** via `_get_hf_client_or_pipeline()`:
-  - HF_TOKEN found -> `InferenceClient` (serverless, default model `Qwen/Qwen2.5-72B-Instruct`)
-  - No token -> loads `Qwen/Qwen2.5-0.5B-Instruct` locally (NO `device_map="auto"` — no `accelerate` needed)
+- **LLM routing** via `_get_hf_client_or_pipeline(model_type)`:
+  - Supports separated models for `chat` and `summary` with caching per model name.
+  - HF_TOKEN found -> `InferenceClient` (serverless, default chat: `Qwen/Qwen2.5-72B-Instruct`, summary: `meta-llama/Llama-3.2-3B-Instruct`)
+  - No token -> loads locally (default: `Qwen/Qwen2.5-0.5B-Instruct`) (NO `device_map="auto"` — no `accelerate` needed)
 - `_call_llm_hf(messages, temperature, max_tokens, json_mode)` — unified LLM wrapper
 - `chat_with_coach(user_message, chat_history)` — RAG chatbot with Egyptian Arabic slang instruction
 - `summarize_description(description)` — returns `(summary_en, summary_ar)` as JSON tuple

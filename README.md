@@ -1,4 +1,4 @@
-﻿---
+---
 title: JobHunter
 emoji: 🎯
 colorFrom: indigo
@@ -26,5 +26,7 @@ Set these in your Space Settings → Variables and Secrets:
 - `ADZUNA_APP_ID` — Adzuna API ID
 - `ADZUNA_APP_KEY` — Adzuna API Key
 - `HF_TOKEN` — HuggingFace token (for serverless LLM)
+- `HF_API_MODEL_CHAT` — Model for Chatbot (e.g. `Qwen/Qwen2.5-72B-Instruct`)
+- `HF_API_MODEL_SUMMARY` — Model for Summarization (e.g. `meta-llama/Llama-3.2-3B-Instruct`)
 - `SECRET_KEY` — Random secret string for Flask sessions
 - `SCRAPER_MODE` — Set to `production`

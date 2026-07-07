@@ -30,6 +30,8 @@ TRANSLATIONS = {
         # Dashboard / Index
         'db_title': 'AI Job Market Intelligence',
         'db_subtitle': 'Real-time job board indexing, NLP skill extraction, and salary predictive analytics.',
+        'btn_browse_jobs': 'Browse Jobs',
+        'btn_match_cv': 'Match CV',
         'kpi_total': 'Total Jobs',
         'kpi_remote': 'Remote Jobs',
         'kpi_internships': 'Internships',
@@ -173,6 +175,8 @@ TRANSLATIONS = {
         # Dashboard / Index
         'db_title': 'تحليلات سوق العمل الذكية',
         'db_subtitle': 'فهرسة فورية لمواقع الوظائف، استخراج المهارات باستخدام الـ NLP، وتحليلات تنبؤية للمرتبات.',
+        'btn_browse_jobs': 'تصفح الوظائف',
+        'btn_match_cv': 'طابق سيرتك الذاتية',
         'kpi_total': 'إجمالي الوظائف',
         'kpi_remote': 'وظائف عن بُعد',
         'kpi_internships': 'فرص تدريب (Internships)',

@@ -136,13 +136,13 @@
         {% if current_lang == 'ar' %}تقييم السيرة الذاتية والمطابقة{% else %}Rate CV &amp; Match{% endif %}
       </h2>
 
-      <form method="POST" action="/recommend" enctype="multipart/form-data" class="flex flex-col gap-5">
+      <form method="POST" action="/recommend" enctype="multipart/form-data" class="flex flex-col gap-5" onsubmit="var b=document.getElementById('scan-btn'); b.disabled=true; b.innerHTML='⏳ {% if current_lang == \"ar\" %}جاري التحليل...{% else %}Scanning...{% endif %}';">
         <div id="cv-dropzone" class="dropzone"
              onclick="document.getElementById('cv-file-input').click()"
              aria-label="{% if current_lang == 'ar' %}منطقة رفع ملف السيرة الذاتية{% else %}CV file upload area{% endif %}">
           <input type="file" id="cv-file-input" name="cv_file"
                  class="hidden" accept=".pdf,.docx"
-                 onchange="updateUploadLabel(this)" required />
+                 onchange="updateUploadLabel(this)" />
           <div style="font-size:2rem;margin-bottom:var(--space-2)">📄</div>
           <div id="upload-label-title" class="font-semibold" style="margin-bottom:var(--space-1)">
             {% if current_lang == 'ar' %}اختر ملف الـ CV أو اسحبه هنا{% else %}Choose CV or Drag here{% endif %}
@@ -150,7 +150,7 @@
           <div class="text-xs text-muted">PDF, DOCX (Max 5MB)</div>
         </div>
 
-        <button type="submit" class="btn btn-primary btn-lg w-full">
+        <button id="scan-btn" type="submit" class="btn btn-primary btn-lg w-full" onclick="if(!document.getElementById('cv-file-input').files.length) { showToast('{% if current_lang == \"ar\" %}رجاءً اختر ملف السيرة الذاتية أولاً{% else %}Please select a CV file first{% endif %}', 'error'); return false; }">
           ⚡ {% if current_lang == 'ar' %}تحليل السيرة الذاتية{% else %}Scan Resume (ATS){% endif %}
         </button>
       </form>

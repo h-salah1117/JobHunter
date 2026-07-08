@@ -14,14 +14,36 @@ from database import (
     fetch_all_jobs, get_stats, get_filter_options,
     get_seniority_breakdown, get_avg_salary_by_seniority,
 )
-from recommender import recommend, get_top_skills, get_salary_stats
-from nlp_analysis import (
-    generate_wordcloud, cluster_jobs, skill_trends,
-    skill_cooccurrence, contract_type_breakdown, country_salary_heatmap,
-)
+try:
+    from recommender import recommend, get_top_skills, get_salary_stats
+except Exception:
+    import pandas as pd
+    def recommend(*args, **kwargs):
+        return pd.DataFrame()
+    def get_top_skills(*args, **kwargs):
+        return []
+    def get_salary_stats(*args, **kwargs):
+        return pd.DataFrame()
+
 from scheduler import get_last_run, trigger_now
-from salary_model import predict_salary
-from rag_assistant import chat_with_coach
+
+try:
+    from nlp_analysis import contract_type_breakdown
+except Exception:
+    def contract_type_breakdown():
+        return []
+
+try:
+    from salary_model import predict_salary
+except Exception:
+    def predict_salary(*args, **kwargs):
+        return {}
+
+try:
+    from rag_assistant import chat_with_coach
+except Exception:
+    def chat_with_coach(*args, **kwargs):
+        return "Service temporarily unavailable."
 
 main = Blueprint('main', __name__)
 

@@ -64,33 +64,18 @@ def index():
     # contract type breakdown for pie chart
     contract_breakdown = contract_type_breakdown()
 
-    # NLP Analytics Data integration
-    from nlp_analysis import get_analytics_data
-    data = get_analytics_data()
-    if not data:
-        data = {
-            'wordcloud_b64': '',
-            'clusters': {},
-            'trends': [],
-            'cooc': {},
-            'salary_data': [],
-            'seniority_breakdown': [],
-            'salary_by_seniority': []
-        }
-
     return render_template(
         'index.html',
         stats=stats,
         top_skills=top_skills,
         contract_breakdown=contract_breakdown,
         last_run=last_run,
-        wordcloud_b64=data.get('wordcloud_b64', ''),
-        clusters_json=json.dumps(data.get('clusters', {})),
-        trends_json=json.dumps(data.get('trends', [])),
-        cooc_json=json.dumps(data.get('cooc', {})),
-        salary_json=json.dumps(data.get('salary_data', [])),
-        seniority_json=json.dumps(data.get('seniority_breakdown', [])),
-        salary_seniority_json=json.dumps(data.get('salary_by_seniority', [])),
+        clusters_json="{}",
+        trends_json="[]",
+        cooc_json="{}",
+        salary_json="[]",
+        seniority_json="[]",
+        salary_seniority_json="[]",
     )
 
 

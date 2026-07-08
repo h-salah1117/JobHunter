@@ -102,42 +102,6 @@
       </div>
     </div>
 
-    <!-- Job Clusters Scatter -->
-    <div class="chart-card stagger-in" style="margin-bottom: var(--space-6);">
-      <h3 class="text-h3" style="margin-bottom: var(--space-4);">{{ t('an_clusters') }}</h3>
-      <div id="chart-clusters" style="width:100%; height:500px;"></div>
-    </div>
-
-    <!-- Skill Trends -->
-    <div class="chart-card stagger-in" style="margin-bottom: var(--space-6);">
-      <h3 class="text-h3" style="margin-bottom: var(--space-4);">{{ t('an_trends') }}</h3>
-      <div id="chart-trends" style="width:100%; height:400px;"></div>
-    </div>
-
-    <!-- Heatmap & Salary -->
-    <div class="grid grid-2" style="margin-bottom: var(--space-6);">
-      <div class="chart-card stagger-in">
-        <h3 class="text-h3" style="margin-bottom: var(--space-4);">{{ t('an_cooc') }}</h3>
-        <div id="chart-cooc" style="width:100%; height:450px;"></div>
-      </div>
-      <div class="chart-card stagger-in">
-        <h3 class="text-h3" style="margin-bottom: var(--space-4);">{{ t('an_salary') }}</h3>
-        <div id="chart-salary" style="width:100%; height:450px;"></div>
-      </div>
-    </div>
-
-    <!-- Seniority Insights -->
-    <div class="grid grid-2" style="margin-bottom: var(--space-6);">
-      <div class="chart-card stagger-in">
-        <h3 class="text-h3" style="margin-bottom: var(--space-4);">{{ t('an_seniority') }}</h3>
-        <div id="chart-seniority" style="width:100%; height:400px;"></div>
-      </div>
-      <div class="chart-card stagger-in">
-        <h3 class="text-h3" style="margin-bottom: var(--space-4);">{{ t('an_salary_seniority') }}</h3>
-        <div id="chart-salary-seniority" style="width:100%; height:400px;"></div>
-      </div>
-    </div>
-
   </section>
 </div>
 {% endblock %}
@@ -195,25 +159,6 @@ document.addEventListener('DOMContentLoaded', function() {
       }], pieLayout, {responsive: true, displayModeBar: false});
     }
 
-    // Advanced NLP Charts
-    if(Object.keys(clustersJson).length > 0) {
-      Plotly.newPlot('chart-clusters', clustersJson.data, Object.assign({}, layout, clustersJson.layout), {responsive: true});
-    }
-    if(trendsJson && trendsJson.length > 0) {
-      Plotly.newPlot('chart-trends', trendsJson, layout, {responsive: true});
-    }
-    if(Object.keys(coocJson).length > 0) {
-      Plotly.newPlot('chart-cooc', coocJson.data, Object.assign({}, layout, coocJson.layout), {responsive: true});
-    }
-    if(salaryJson && salaryJson.length > 0) {
-      Plotly.newPlot('chart-salary', salaryJson, layout, {responsive: true});
-    }
-    if(seniorityJson && seniorityJson.length > 0) {
-      Plotly.newPlot('chart-seniority', seniorityJson, layout, {responsive: true});
-    }
-    if(salarySeniorityJson && salarySeniorityJson.length > 0) {
-      Plotly.newPlot('chart-salary-seniority', salarySeniorityJson, layout, {responsive: true});
-    }
   }
 
   renderCharts();

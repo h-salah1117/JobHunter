@@ -191,19 +191,23 @@
           {%- if job.summary_ar -%}
             {{ job.summary_ar }}
           {%- else -%}
-            <div style="font-size:0.85em;color:var(--text-muted);font-style:italic;margin-bottom:var(--space-2);">
-              ⏳ الملخص بالذكاء الاصطناعي قيد التجهيز... إليك الوصف الأصلي للوظيفة:
+            <div style="font-size:0.85em;color:var(--warning);font-weight:600;margin-bottom:var(--space-2);">
+              ⏳ الملخص الذكي قيد التجهيز في الخلفية... إليك الوصف المتوفر حالياً:
             </div>
-            {{ (job.description or '')[:300] }}...
+            <div style="padding:var(--space-3);background:var(--bg-elevated);border-radius:var(--radius-md);font-size:0.9em;color:var(--text-secondary);border-left:3px solid var(--border-default);">
+              {{ job.description or 'لا يوجد وصف.' }}
+            </div>
           {%- endif -%}
         {%- else -%}
           {%- if job.summary_en -%}
             {{ job.summary_en }}
           {%- else -%}
-            <div style="font-size:0.85em;color:var(--text-muted);font-style:italic;margin-bottom:var(--space-2);">
-              ⏳ AI Summary is being prepared... Here is the original job description:
+            <div style="font-size:0.85em;color:var(--warning);font-weight:600;margin-bottom:var(--space-2);">
+              ⏳ AI Summary is being processed in the background... Here is the available description:
             </div>
-            {{ (job.description or '')[:300] }}...
+            <div style="padding:var(--space-3);background:var(--bg-elevated);border-radius:var(--radius-md);font-size:0.9em;color:var(--text-secondary);border-left:3px solid var(--border-default);">
+              {{ job.description or 'No description available.' }}
+            </div>
           {%- endif -%}
         {%- endif -%}
       </div>

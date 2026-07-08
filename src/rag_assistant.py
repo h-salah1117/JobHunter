@@ -363,16 +363,21 @@ def summarize_description(description: str) -> tuple[str, str]:
     # Clean description briefly to avoid sending excessive junk
     cleaned_desc = description[:3000] # Limit input characters to save tokens
 
-    prompt = f"""Summarize this job description in 2-3 sentences each.
-Return ONLY a valid raw JSON object with exactly these two keys, no markdown, no extra text:
-{{"summary_en": "...", "summary_ar": "..."}}
+    prompt = f"""Summarize this job description. Extract ONLY the core responsibilities and technical requirements. Make it extremely brief and straight to the point.
+Return ONLY a valid raw JSON object with exactly these two keys, no markdown fences, no extra text:
+{{"summary_en": "• Point 1\\n• Point 2", "summary_ar": "• النقطة الأولى (مهام تقنية واضحة)\\n• النقطة الثانية"}}
+
+Important rules for Arabic (summary_ar):
+- Use natural, professional Arabic (avoid literal or robotic translations).
+- Focus only on what the candidate will actually do and what tools they need.
+- Keep it to 2 short bullet points max.
 
 Job description:
 {cleaned_desc}"""
 
     try:
         messages = [
-            {"role": "system", "content": "You are a professional assistant that always outputs a valid raw JSON object with keys 'summary_en' and 'summary_ar'."},
+            {"role": "system", "content": "You are a professional technical recruiter. You always output a valid raw JSON object with keys 'summary_en' and 'summary_ar'. You never include extra conversational text."},
             {"role": "user", "content": prompt}
         ]
         content = _call_llm_hf(messages, temperature=0.1, max_tokens=600, json_mode=True, model_type='summary')

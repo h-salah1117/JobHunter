@@ -31,10 +31,17 @@ def _enrich_salaries(jobs_list):
     for j in jobs_list:
         s_min = j.get('salary_min')
         s_max = j.get('salary_max')
-        if s_min is not None and math.isnan(s_min):
+        if isinstance(s_min, float) and math.isnan(s_min):
             s_min = None
             j['salary_min'] = None
-        if s_max is not None and math.isnan(s_max):
+        elif isinstance(s_min, str) and not s_min.strip():
+            s_min = None
+            j['salary_min'] = None
+            
+        if isinstance(s_max, float) and math.isnan(s_max):
+            s_max = None
+            j['salary_max'] = None
+        elif isinstance(s_max, str) and not s_max.strip():
             s_max = None
             j['salary_max'] = None
 

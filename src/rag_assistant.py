@@ -363,14 +363,14 @@ def summarize_description(description: str) -> tuple[str, str]:
     # Clean description briefly to avoid sending excessive junk
     cleaned_desc = description[:3000] # Limit input characters to save tokens
 
-    prompt = f"""Summarize this job description. Extract ONLY the core responsibilities and technical requirements. Make it extremely brief and straight to the point.
+    prompt = f"""Summarize this job description. Extract the core responsibilities and technical requirements. Make it extremely brief and straight to the point.
 Return ONLY a valid raw JSON object with exactly these two keys, no markdown fences, no extra text:
-{{"summary_en": "• Point 1\\n• Point 2", "summary_ar": "• النقطة الأولى (مهام تقنية واضحة)\\n• النقطة الثانية"}}
+{{"summary_en": "Company X is looking for a [Role] specializing in [Field]. Core responsibilities include [responsibilities]. Required skills: [Skills].", "summary_ar": "شركة [اسم الشركة] بتدور على [المسمى الوظيفي] متخصص في [المجال]. هتكون مسؤوليته [المهام الأساسية]، ومحتاجين مهارات زي [المهارات المطلوبة]."}}
 
 Important rules for Arabic (summary_ar):
-- Use natural, professional Arabic (avoid literal or robotic translations).
-- Focus only on what the candidate will actually do and what tools they need.
-- Keep it to 2 short bullet points max.
+- MUST use warm, friendly Egyptian Arabic Slang exactly matching this style: "شركة X بتدور علي [المسمى] متخصص في [المجال].. هتكون مسؤوليته [المهام]..".
+- Extract the actual company name and role from the description if available, otherwise say "الشركة بتدور على...".
+- Keep it to one short conversational paragraph, no bullet points.
 
 Job description:
 {cleaned_desc}"""

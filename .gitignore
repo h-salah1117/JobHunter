@@ -12,6 +12,7 @@ __pycache__/
 
 # Database & binary model files (auto-generated on first run)
 data/*.db*
+*.db
 data/chroma_db/
 data/analytics_cache.json
 models/

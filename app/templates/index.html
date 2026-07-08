@@ -1,10 +1,6 @@
 {% extends "base.html" %}
 {% block title %}{{ t('nav_dashboard') }}{% endblock %}
 
-{% block head %}
-<script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
-{% endblock %}
-
 {% block content %}
 <div class="container">
 
@@ -72,7 +68,7 @@
     </div>
   </section>
 
-  <!-- ── Section 4: Analytics ───────────────────────────────────────────── -->
+  <!-- ── Section 4: Market Insights ───────────────────────────────────────── -->
   <section id="analytics" style="padding-bottom: var(--space-10);">
     <div class="flex justify-between items-center" style="margin-bottom: var(--space-6);">
       <h2 class="text-h2">{{ t('an_title') }}</h2>
@@ -81,89 +77,94 @@
       </button>
     </div>
 
-    <!-- Wordcloud -->
-    {% if wordcloud_b64 %}
-    <div class="chart-card stagger-in" style="margin-bottom: var(--space-6); text-align: center;">
-      <h3 class="text-h3" style="margin-bottom: var(--space-4);">{{ t('an_wordcloud') }}</h3>
-      <img src="data:image/png;base64,{{ wordcloud_b64 }}" alt="Word Cloud"
-           style="max-width: 100%; border-radius: var(--radius-md); box-shadow: var(--shadow-sm);">
-    </div>
-    {% endif %}
+    <div class="grid grid-3" style="gap: var(--space-6);">
 
-    <!-- Charts Grid 1 -->
-    <div class="grid grid-2" style="margin-bottom: var(--space-6);">
-      <div class="chart-card stagger-in">
-        <h3 class="text-h3" style="margin-bottom: var(--space-4);">{{ t('an_top_skills') }}</h3>
-        <div id="chart-top-skills" style="width:100%; height:350px;"></div>
+      <!-- Top Skills Card -->
+      <div class="card stagger-in" style="grid-column: span 1;">
+        <h3 class="text-h3" style="margin-bottom: var(--space-4);">
+          🛠️ {% if current_lang == 'ar' %}أكثر المهارات طلباً{% else %}Top In-Demand Skills{% endif %}
+        </h3>
+        {% if top_skills %}
+        <div class="flex flex-wrap gap-2">
+          {% for skill in top_skills %}
+          {% set pct = ((skill.job_count / top_skills[0].job_count) * 100) | int %}
+          <span class="badge badge-accent" style="font-size:var(--text-xs); opacity: {{ [0.5 + pct/200, 1.0] | min }};">
+            {{ skill.name or skill.skill }} <span style="opacity:0.7;">· {{ skill.job_count }}</span>
+          </span>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-sm text-muted">{% if current_lang == 'ar' %}لا توجد بيانات بعد{% else %}No data yet{% endif %}</p>
+        {% endif %}
       </div>
-      <div class="chart-card stagger-in">
-        <h3 class="text-h3" style="margin-bottom: var(--space-4);">{{ t('an_contract_type') }}</h3>
-        <div id="chart-contract" style="width:100%; height:350px;"></div>
-      </div>
-    </div>
 
+      <!-- Contract Breakdown Card -->
+      <div class="card stagger-in" style="grid-column: span 1;">
+        <h3 class="text-h3" style="margin-bottom: var(--space-4);">
+          📋 {% if current_lang == 'ar' %}أنواع العقود{% else %}Contract Breakdown{% endif %}
+        </h3>
+        {% if contract_breakdown %}
+        {% set total_contracts = contract_breakdown | sum(attribute='count') %}
+        <div class="flex flex-col gap-3">
+          {% for c in contract_breakdown %}
+          {% set pct = ((c.count / total_contracts) * 100) | round(1) if total_contracts > 0 else 0 %}
+          <div>
+            <div class="flex justify-between text-sm" style="margin-bottom: var(--space-1);">
+              <span>{{ t(c.contract_type) if c.contract_type else 'Unknown' }}</span>
+              <span class="text-muted">{{ c.count }} <span style="opacity:0.6;">({{ pct }}%)</span></span>
+            </div>
+            <div style="width:100%; height:6px; background:var(--bg-surface); border-radius:3px; overflow:hidden;">
+              <div style="height:100%; width:{{ pct }}%; background:var(--accent); border-radius:3px; transition:width 1s ease;"></div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-sm text-muted">{% if current_lang == 'ar' %}لا توجد بيانات بعد{% else %}No data yet{% endif %}</p>
+        {% endif %}
+      </div>
+
+      <!-- Top Countries Card -->
+      <div class="card stagger-in" style="grid-column: span 1;">
+        <h3 class="text-h3" style="margin-bottom: var(--space-4);">
+          🌍 {% if current_lang == 'ar' %}أكثر الدول وظائف{% else %}Top Hiring Countries{% endif %}
+        </h3>
+        {% if top_countries %}
+        {% set max_cnt = top_countries[0].cnt %}
+        <div class="flex flex-col gap-3">
+          {% for country in top_countries %}
+          {% set pct = ((country.cnt / max_cnt) * 100) | round(1) if max_cnt > 0 else 0 %}
+          <div>
+            <div class="flex justify-between text-sm" style="margin-bottom: var(--space-1);">
+              <span>{{ country.country }}</span>
+              <span class="text-muted">{{ country.cnt }}</span>
+            </div>
+            <div style="width:100%; height:6px; background:var(--bg-surface); border-radius:3px; overflow:hidden;">
+              <div style="height:100%; width:{{ pct }}%; background:var(--warning); border-radius:3px; transition:width 1s ease;"></div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-sm text-muted">{% if current_lang == 'ar' %}لا توجد بيانات بعد{% else %}No data yet{% endif %}</p>
+        {% endif %}
+      </div>
+
+    </div>
   </section>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-  const isDark = document.body.getAttribute('data-theme') === 'dark';
-  const rawTopSkills = {{ top_skills | tojson | safe }};
-  const contractData = {{ contract_breakdown | tojson | safe }};
-  
-  const clustersJson = {{ clusters_json | safe }};
-  const trendsJson = {{ trends_json | safe }};
-  const coocJson = {{ cooc_json | safe }};
-  const salaryJson = {{ salary_json | safe }};
-  const seniorityJson = {{ seniority_json | safe }};
-  const salarySeniorityJson = {{ salary_seniority_json | safe }};
-
-  function getLayout(title) {
-    const isDarkNow = document.body.getAttribute('data-theme') === 'dark';
-    const textColor = isDarkNow ? '#e2e8f0' : '#1e293b';
-    const gridColor = isDarkNow ? '#334155' : '#e2e8f0';
-    const bgColor = 'rgba(0,0,0,0)';
-    return {
-      margin: { t: 10, l: 40, r: 20, b: 40 },
-      paper_bgcolor: bgColor,
-      plot_bgcolor: bgColor,
-      font: { color: textColor, family: 'Inter, sans-serif' },
-      xaxis: { gridcolor: gridColor, zerolinecolor: gridColor },
-      yaxis: { gridcolor: gridColor, zerolinecolor: gridColor },
-      colorway: ['#4f46e5', '#0ea5e9', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6']
-    };
-  }
-
-  function renderCharts() {
-    const layout = getLayout();
-    
-    // Top Skills
-    if(rawTopSkills && rawTopSkills.length > 0) {
-      const x = rawTopSkills.map(d => d.skill);
-      const y = rawTopSkills.map(d => d.count);
-      Plotly.newPlot('chart-top-skills', [{
-        x: x, y: y, type: 'bar',
-        marker: { color: '#4f46e5', borderRadius: 4 }
-      }], layout, {responsive: true, displayModeBar: false});
-    }
-
-    // Contract Type
-    if(contractData && contractData.length > 0) {
-      const labels = contractData.map(d => d.contract_type || 'Unknown');
-      const values = contractData.map(d => d.count);
-      const pieLayout = Object.assign({}, layout, { margin: { t:20, l:20, r:20, b:20 } });
-      Plotly.newPlot('chart-contract', [{
-        labels: labels, values: values, type: 'pie', hole: 0.4
-      }], pieLayout, {responsive: true, displayModeBar: false});
-    }
-
-  }
-
-  renderCharts();
-
-  window.addEventListener('themeChanged', renderCharts);
-});
+function triggerRefresh(btn) {
+  btn.disabled = true;
+  btn.textContent = '⏳ ...';
+  fetch('/api/trigger', {method:'POST'})
+    .then(r => r.json())
+    .then(d => { showToast(d.message || 'Refresh triggered!', 'success'); })
+    .catch(() => { showToast('Could not reach server', 'error'); })
+    .finally(() => { btn.disabled = false; btn.textContent = '🔄 {{ t("btn_refresh") }}'; });
+}
 </script>
 {% endblock %}

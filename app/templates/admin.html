@@ -3,96 +3,71 @@
 
 {% block content %}
 <div style="margin-bottom:var(--space-8)">
-  <h1 class="text-h1">{% if current_lang == 'ar' %}لوحة الإدارة والنظام{% else %}System Administration{% endif %}</h1>
-  <p class="text-body text-sm text-muted">{% if current_lang == 'ar' %}مراقبة حالة النظام، المفاتيح السرية، وحالة معالجة الوظائف.{% else %}Monitor system status, API tokens, and job processing progress.{% endif %}</p>
+  <h1 class="text-h1">{% if current_lang == 'ar' %}لوحة الإدارة{% else %}Admin Dashboard{% endif %}</h1>
+  <p class="text-body text-sm text-muted">{% if current_lang == 'ar' %}مراقبة حالة معالجة الوظائف وتشغيل التلخيص يدوياً.{% else %}Monitor job processing progress and trigger AI summarization manually.{% endif %}</p>
 </div>
 
 <div class="grid grid-2" style="margin-bottom:var(--space-6);">
-  <!-- HF Token Status Card -->
-  <div class="card stagger-in">
-    <h3 class="text-h3" style="margin-bottom:var(--space-4); display:flex; align-items:center; gap:var(--space-2);">
-      🔑 {% if current_lang == 'ar' %}حالة مفتاح الذكاء الاصطناعي{% else %}AI Token Status{% endif %}
-    </h3>
-    
-    <div style="background:var(--bg-surface); padding:var(--space-4); border-radius:var(--radius-md); border-left:4px solid {% if token_status == 'Active' %}var(--accent){% else %}var(--warning){% endif %}; margin-bottom:var(--space-4);">
-      <div style="display:flex; justify-content:space-between; margin-bottom:var(--space-2);">
-        <span class="text-sm font-bold">HF_TOKEN:</span>
-        <span class="badge {% if token_status == 'Active' %}badge-accent{% else %}badge-warning{% endif %}">{{ token_status }}</span>
-      </div>
-      <div class="text-sm text-muted" style="font-family:monospace; background:var(--bg-card); padding:var(--space-2); border-radius:4px; margin-top:var(--space-2);">
-        {{ masked_token }}
-      </div>
-    </div>
-    
-    <p class="text-xs text-muted" style="line-height:1.6;">
-      {% if current_lang == 'ar' %}
-        {% if token_status == 'Active' %}
-          التوكن متفعل وجاهز. الموديلات الكبيرة الذكية (Serverless API) شغالة في التلخيص وفحص السيرة الذاتية.
-        {% else %}
-          التوكن مش شغال أو مفقود! النظام شغال حالياً بموديل محلي طوارئ بيطلع نتايج سيئة. لازم تضيف HF_TOKEN في الـ Secrets.
-        {% endif %}
-      {% else %}
-        {% if token_status == 'Active' %}
-          Token is active. Serverless API models are enabled for high-quality summaries and ATS scanning.
-        {% else %}
-          Token is missing! The system is using a tiny local fallback model which produces hallucinations. Please add HF_TOKEN to your environment secrets.
-        {% endif %}
-      {% endif %}
-    </p>
-  </div>
 
-  <!-- Job Summarization Status Card -->
+  <!-- Job Counts Card -->
   <div class="card stagger-in">
     <h3 class="text-h3" style="margin-bottom:var(--space-4); display:flex; align-items:center; gap:var(--space-2);">
-      📊 {% if current_lang == 'ar' %}معالجة وتلخيص الوظائف{% else %}Jobs Processing Status{% endif %}
+      💼 {% if current_lang == 'ar' %}إجمالي الوظائف{% else %}Jobs Overview{% endif %}
     </h3>
-    
     <div style="display:flex; flex-direction:column; gap:var(--space-4);">
       <div style="display:flex; justify-content:space-between; padding:var(--space-3); background:var(--bg-surface); border-radius:var(--radius-md);">
-        <span class="text-sm text-muted">{% if current_lang == 'ar' %}إجمالي الوظائف (مكشوطة){% else %}Total Jobs Scraped{% endif %}</span>
+        <span class="text-sm text-muted">{% if current_lang == 'ar' %}إجمالي الوظائف المجمعة{% else %}Total Jobs Scraped{% endif %}</span>
         <span class="text-lg font-bold">{{ total_jobs }}</span>
       </div>
-      
       <div style="display:flex; justify-content:space-between; padding:var(--space-3); background:var(--bg-surface); border-radius:var(--radius-md);">
         <span class="text-sm text-muted">{% if current_lang == 'ar' %}تم تلخيصها بالذكاء الاصطناعي{% else %}Successfully Summarized{% endif %}</span>
         <span class="text-lg font-bold text-accent">{{ summarized_jobs }}</span>
       </div>
+      <div style="display:flex; justify-content:space-between; padding:var(--space-3); background:var(--bg-surface); border-radius:var(--radius-md);">
+        <span class="text-sm text-muted">{% if current_lang == 'ar' %}بدون ملخص بعد{% else %}Pending Summarization{% endif %}</span>
+        <span class="text-lg font-bold" style="color:var(--warning);">{{ total_jobs - summarized_jobs }}</span>
+      </div>
     </div>
-    
-    <div style="margin-top:var(--space-5);">
+  </div>
+
+  <!-- Progress Card -->
+  <div class="card stagger-in">
+    <h3 class="text-h3" style="margin-bottom:var(--space-4); display:flex; align-items:center; gap:var(--space-2);">
+      📊 {% if current_lang == 'ar' %}تقدم التلخيص{% else %}Summarization Progress{% endif %}
+    </h3>
+    <div style="margin-bottom:var(--space-5);">
       <div style="display:flex; justify-content:space-between; margin-bottom:var(--space-2);">
-        <span class="text-xs font-bold">{% if current_lang == 'ar' %}نسبة الإنجاز{% else %}Progress{% endif %}</span>
-        <span class="text-xs font-bold text-accent">{{ progress }}%</span>
+        <span class="text-sm font-bold">{% if current_lang == 'ar' %}نسبة الإنجاز{% else %}Progress{% endif %}</span>
+        <span class="text-sm font-bold text-accent">{{ progress }}%</span>
       </div>
-      <div style="width:100%; height:8px; background:var(--bg-surface); border-radius:4px; overflow:hidden;">
-        <div style="height:100%; width:{{ progress }}%; background:var(--accent); transition:width 1s ease;"></div>
+      <div style="width:100%; height:12px; background:var(--bg-surface); border-radius:6px; overflow:hidden;">
+        <div style="height:100%; width:{{ progress }}%; background:linear-gradient(90deg, var(--accent), #10b981); border-radius:6px; transition:width 1.2s ease;"></div>
       </div>
     </div>
-    
-    <div class="text-xs text-muted" style="margin-top:var(--space-4);">
-      ⏳ {% if current_lang == 'ar' %}آخر تحديث للوظائف:{% else %}Last Scrape Run:{% endif %} {{ last_scraped or 'None' }}
+    <div class="text-xs text-muted">
+      ⏳ {% if current_lang == 'ar' %}آخر تحديث للوظائف:{% else %}Last Scrape Run:{% endif %} {{ last_scraped or 'Never' }}
     </div>
   </div>
 </div>
 
+<!-- Actions Card -->
 <div class="card stagger-in" style="text-align:center;">
-  <p class="text-sm text-muted" style="margin-bottom:var(--space-4);">
+  <h3 class="text-h3" style="margin-bottom:var(--space-3);">
+    ⚡ {% if current_lang == 'ar' %}إجراءات يدوية{% else %}Manual Actions{% endif %}
+  </h3>
+  <p class="text-sm text-muted" style="margin-bottom:var(--space-6);">
     {% if current_lang == 'ar' %}
-      لو حابب تشغل التلخيص يدوياً بدل ما تستنى الـ Scheduler، تقدر تضغط هنا. 
-      <br><br>
-      لو عايز تمسح التلخيصات القديمة عشان تتكتب من تاني بالأسلوب الجديد، اضغط على إعادة تعيين.
+      شغّل التلخيص الآن بدون ما تستنى الـ Scheduler، أو امسح التلخيصات القديمة عشان تتكتب من تاني بالأسلوب الجديد.
     {% else %}
-      If you want to manually trigger the AI summarization backfill instead of waiting for the scheduler, click here.
-      <br><br>
-      To clear all existing summaries and regenerate them in the new style, click Reset.
+      Trigger the AI summarizer immediately, or reset all summaries to regenerate them with the updated prompt style.
     {% endif %}
   </p>
-  <div style="display:flex; justify-content:center; gap:var(--space-4);">
-    <button class="btn btn-primary" onclick="triggerSummarization()">
-      🚀 {% if current_lang == 'ar' %}تشغيل التلخيص الآن{% else %}Trigger AI Summarization Now{% endif %}
+  <div style="display:flex; justify-content:center; flex-wrap:wrap; gap:var(--space-4);">
+    <button class="btn btn-primary btn-lg" onclick="triggerSummarization()">
+      🚀 {% if current_lang == 'ar' %}تشغيل التلخيص الآن{% else %}Trigger AI Summarization{% endif %}
     </button>
-    <button class="btn" style="background:var(--warning); color:var(--bg-main);" onclick="resetSummaries()">
-      🔄 {% if current_lang == 'ar' %}إعادة تعيين ومسح التلخيصات القديمة{% else %}Reset Old Summaries{% endif %}
+    <button class="btn btn-lg" style="background:var(--warning); color:#000; font-weight:700;" onclick="resetSummaries()">
+      🔄 {% if current_lang == 'ar' %}إعادة تعيين التلخيصات{% else %}Reset All Summaries{% endif %}
     </button>
   </div>
 </div>
@@ -109,22 +84,20 @@ function triggerSummarization() {
       showToast(data.message, 'success');
       setTimeout(() => location.reload(), 2000);
     })
-    .catch(err => {
-      showToast('Error triggering task', 'error');
-    });
+    .catch(() => showToast('Error triggering task', 'error'));
 }
 
 function resetSummaries() {
-  if(confirm('{% if current_lang == "ar" %}متأكد إنك عايز تمسح كل التلخيصات وتعملها من تاني؟{% else %}Are you sure you want to delete all summaries and regenerate them?{% endif %}')) {
+  const msg = '{% if current_lang == "ar" %}متأكد إنك عايز تمسح كل التلخيصات؟ هتتحتاج وقت عشان تتعمل من تاني.{% else %}Are you sure? All summaries will be deleted and need to be regenerated.{% endif %}';
+  if(confirm(msg)) {
+    showToast('{% if current_lang == "ar" %}جاري مسح التلخيصات...{% else %}Clearing summaries...{% endif %}');
     fetch('/api/reset-summaries', { method: 'POST' })
       .then(res => res.json())
       .then(data => {
         showToast(data.message, 'success');
-        setTimeout(() => location.reload(), 2000);
+        setTimeout(() => location.reload(), 2500);
       })
-      .catch(err => {
-        showToast('Error resetting summaries', 'error');
-      });
+      .catch(() => showToast('Error resetting summaries', 'error'));
   }
 }
 </script>

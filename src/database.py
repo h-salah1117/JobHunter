@@ -212,12 +212,8 @@ def fetch_all_jobs(
         query += ' AND (j.title LIKE ? OR co.name LIKE ?)'
         params.extend([f'%{search_query}%', f'%{search_query}%'])
 
-    if sort == 'salary_high':
-        query += ' ORDER BY coalesce(j.salary_max, j.predicted_max, 0) DESC'
-    elif sort == 'salary_low':
-        query += ' ORDER BY coalesce(j.salary_min, j.predicted_min, 9999999) ASC'
-    else:
-        query += ' ORDER BY j.scraped_at DESC'
+    # Always fetch newest first from DB; salary sort is done in Python after enrichment
+    query += ' ORDER BY coalesce(j.posted_at, j.scraped_at) DESC'
         
     query += ' LIMIT ?'
     params.append(limit)
@@ -225,7 +221,8 @@ def fetch_all_jobs(
     c.execute(query, params)
     rows = [dict(r) for r in c.fetchall()]
     conn.close()
-    return rows
+    return rows, sort  # return sort intent so caller can sort after enrichment
+
 
 
 def get_stats() -> dict:

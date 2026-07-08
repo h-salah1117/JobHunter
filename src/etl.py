@@ -88,6 +88,7 @@ def enrich_job_summaries(limit: int = 30):
           AND description IS NOT NULL
           AND description != ''
           AND datetime(coalesce(posted_at, scraped_at)) >= datetime('now', '-30 days')
+        ORDER BY coalesce(posted_at, scraped_at) DESC
         LIMIT ?
     ''', (limit,))
     rows = c.fetchall()

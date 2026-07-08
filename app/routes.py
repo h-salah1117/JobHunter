@@ -248,12 +248,58 @@ def recommend_jobs():
     )
 
 
-# ── Analytics ────────────────────────────────────────────────────────────────
 @main.route('/analytics')
 def analytics():
     from flask import redirect, url_for
     return redirect(url_for('main.index') + '#analytics')
 
+
+# ── Admin Dashboard ──────────────────────────────────────────────────────────
+@main.route('/admin')
+def admin_page():
+    from database import get_connection
+    conn = get_connection()
+    c = conn.cursor()
+    
+    # 1. Total Jobs
+    c.execute("SELECT COUNT(*) FROM jobs")
+    total_jobs = c.fetchone()[0]
+    
+    # 2. Summarized Jobs
+    c.execute("SELECT COUNT(*) FROM jobs WHERE summary_en IS NOT NULL AND summary_en != ''")
+    summarized_jobs = c.fetchone()[0]
+    
+    # 3. Last scraper run
+    c.execute("SELECT MAX(scraped_at) FROM jobs")
+    last_scraped = c.fetchone()[0]
+    
+    conn.close()
+    
+    # 4. Token status
+    hf_token = os.environ.get('HF_TOKEN', '')
+    token_status = "Not Configured"
+    masked_token = "---"
+    if hf_token:
+        token_status = "Active"
+        if len(hf_token) > 8:
+            masked_token = f"{hf_token[:4]}...{hf_token[-4:]}"
+        else:
+            masked_token = "***"
+            
+    # Calculate percentage
+    progress = 0
+    if total_jobs > 0:
+        progress = int((summarized_jobs / total_jobs) * 100)
+
+    return render_template(
+        'admin.html',
+        total_jobs=total_jobs,
+        summarized_jobs=summarized_jobs,
+        progress=progress,
+        last_scraped=last_scraped,
+        token_status=token_status,
+        masked_token=masked_token
+    )
 
 
 

@@ -78,14 +78,23 @@
 <div class="card stagger-in" style="text-align:center;">
   <p class="text-sm text-muted" style="margin-bottom:var(--space-4);">
     {% if current_lang == 'ar' %}
-      لو حابب تشغل التلخيص يدوياً بدل ما تستنى الـ Scheduler، تقدر تضغط هنا.
+      لو حابب تشغل التلخيص يدوياً بدل ما تستنى الـ Scheduler، تقدر تضغط هنا. 
+      <br><br>
+      لو عايز تمسح التلخيصات القديمة عشان تتكتب من تاني بالأسلوب الجديد، اضغط على إعادة تعيين.
     {% else %}
       If you want to manually trigger the AI summarization backfill instead of waiting for the scheduler, click here.
+      <br><br>
+      To clear all existing summaries and regenerate them in the new style, click Reset.
     {% endif %}
   </p>
-  <button class="btn btn-primary" onclick="triggerSummarization()">
-    🚀 {% if current_lang == 'ar' %}تشغيل التلخيص الآن{% else %}Trigger AI Summarization Now{% endif %}
-  </button>
+  <div style="display:flex; justify-content:center; gap:var(--space-4);">
+    <button class="btn btn-primary" onclick="triggerSummarization()">
+      🚀 {% if current_lang == 'ar' %}تشغيل التلخيص الآن{% else %}Trigger AI Summarization Now{% endif %}
+    </button>
+    <button class="btn" style="background:var(--warning); color:var(--bg-main);" onclick="resetSummaries()">
+      🔄 {% if current_lang == 'ar' %}إعادة تعيين ومسح التلخيصات القديمة{% else %}Reset Old Summaries{% endif %}
+    </button>
+  </div>
 </div>
 
 {% endblock %}
@@ -103,6 +112,20 @@ function triggerSummarization() {
     .catch(err => {
       showToast('Error triggering task', 'error');
     });
+}
+
+function resetSummaries() {
+  if(confirm('{% if current_lang == "ar" %}متأكد إنك عايز تمسح كل التلخيصات وتعملها من تاني؟{% else %}Are you sure you want to delete all summaries and regenerate them?{% endif %}')) {
+    fetch('/api/reset-summaries', { method: 'POST' })
+      .then(res => res.json())
+      .then(data => {
+        showToast(data.message, 'success');
+        setTimeout(() => location.reload(), 2000);
+      })
+      .catch(err => {
+        showToast('Error resetting summaries', 'error');
+      });
+  }
 }
 </script>
 {% endblock %}

@@ -364,6 +364,18 @@ def api_summarize_all():
     return jsonify({'status': 'ok', 'message': 'Continuous AI summarization backfill started in the background.'})
 
 
+@main.route('/api/reset-summaries', methods=['POST'])
+def api_reset_summaries():
+    """Clear all summaries to allow them to be regenerated with a new prompt style."""
+    from database import get_connection
+    conn = get_connection()
+    c = conn.cursor()
+    c.execute("UPDATE jobs SET summary_en = NULL, summary_ar = NULL")
+    conn.commit()
+    conn.close()
+    return jsonify({'status': 'ok', 'message': 'All summaries cleared. You can now trigger the summarizer again.'})
+
+
 @main.route('/api/salary-predict', methods=['POST'])
 def api_salary_predict():
     """Predict salary range for a given job description."""

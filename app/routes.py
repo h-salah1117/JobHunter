@@ -279,9 +279,9 @@ def recommend_jobs():
             from flask import session
             lang = session.get('lang', 'en')
             if lang == 'ar':
-                error_message = "حدث خطأ أثناء معالجة طلبك. يُرجى المحاولة مرة أخرى."
+                error_message = f"حدث خطأ أثناء معالجة طلبك: {str(e)}"
             else:
-                error_message = "Something went wrong while processing your request. Please try again."
+                error_message = f"Something went wrong: {str(e)}"
 
 
     # Optimized filter options via SQL DISTINCT

@@ -15,8 +15,10 @@
         <a href="/recommend" class="btn btn-secondary btn-lg">{{ t('btn_match_cv') | default('Match My CV') }}</a>
       </div>
 
-      <div class="stats-counter text-sm text-muted" style="margin-top: var(--space-6); font-weight: 500;">
-        {{ stats.total | default(0) }} Jobs · {{ stats.companies | default(0) }} Companies · {{ stats.countries | default(0) }} Countries
+      <div class="stats-counter text-sm text-muted" style="margin-top: var(--space-6); font-weight: 500;" dir="ltr">
+        <bdi>{{ stats.total | default(0) }} {% if current_lang == 'ar' %}وظيفة{% else %}Jobs{% endif %}</bdi> &middot; 
+        <bdi>{{ stats.companies | default(0) }} {% if current_lang == 'ar' %}شركة{% else %}Companies{% endif %}</bdi> &middot; 
+        <bdi>{{ stats.countries | default(0) }} {% if current_lang == 'ar' %}دولة{% else %}Countries{% endif %}</bdi>
       </div>
     </div>
   </section>
@@ -136,7 +138,7 @@
           {% set pct = ((country.cnt / max_cnt) * 100) | round(1) if max_cnt > 0 else 0 %}
           <div>
             <div class="flex justify-between text-sm" style="margin-bottom: var(--space-1);">
-              <span>{{ country.country }}</span>
+              <span>{{ t(country.country) if country.country else t('opt_any') }}</span>
               <span class="text-muted">{{ country.cnt }}</span>
             </div>
             <div style="width:100%; height:6px; background:var(--bg-surface); border-radius:3px; overflow:hidden;">

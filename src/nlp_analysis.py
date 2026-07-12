@@ -11,10 +11,7 @@ import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
-from wordcloud import WordCloud, STOPWORDS as WC_STOPWORDS
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
+
 
 import sys, os
 sys.path.insert(0, os.path.dirname(__file__))
@@ -22,14 +19,6 @@ from database import get_connection, get_seniority_breakdown, get_avg_salary_by_
 
 
 # Cluster labels are dynamically generated using top TF-IDF terms per clustercentroid.
-
-MY_STOPWORDS = set(WC_STOPWORDS).union({
-    'the', 'and', 'for', 'with', 'you', 'will', 'our', 'are', 'this',
-    'have', 'that', 'from', 'your', 'work', 'team', 'role', 'looking',
-    'experience', 'skills', 'working', 'ability', 'strong', 'good',
-    'new', 'join', 'able', 'part', 'also', 'help', 'well', 'use',
-    'using', 'used', 'knowledge', 'understanding', 'excellent',
-})
 
 
 def _clean(text: str) -> str:
@@ -57,6 +46,24 @@ def generate_wordcloud() -> str:
         return ''
 
     text = ' '.join(df['clean'].tolist())
+
+    try:
+        from wordcloud import WordCloud, STOPWORDS as WC_STOPWORDS
+        import matplotlib
+        matplotlib.use('Agg')
+        import matplotlib.pyplot as plt
+    except ImportError:
+        import logging
+        logging.warning("[NLP] wordcloud or matplotlib missing, cannot generate wordcloud.")
+        return ''
+
+    MY_STOPWORDS = set(WC_STOPWORDS).union({
+        'the', 'and', 'for', 'with', 'you', 'will', 'our', 'are', 'this',
+        'have', 'that', 'from', 'your', 'work', 'team', 'role', 'looking',
+        'experience', 'skills', 'working', 'ability', 'strong', 'good',
+        'new', 'join', 'able', 'part', 'also', 'help', 'well', 'use',
+        'using', 'used', 'knowledge', 'understanding', 'excellent',
+    })
 
     wc = WordCloud(
         width=900,

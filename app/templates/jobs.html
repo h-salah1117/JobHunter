@@ -158,7 +158,7 @@
     <div class="job-card-body">
       {# Title & Company #}
       <div class="flex justify-between items-center gap-3">
-        <h3 class="job-title" title="{{ job.title }}" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+        <h3 class="job-title" title="{{ job.title }}" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: start;" dir="auto">
           {{ job.title }}
         </h3>
         {% if job.contract_type %}

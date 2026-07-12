@@ -155,16 +155,4 @@
 </div>
 {% endblock %}
 
-{% block scripts %}
-<script>
-function triggerRefresh(btn) {
-  btn.disabled = true;
-  btn.textContent = '⏳ ...';
-  fetch('/api/trigger', {method:'POST'})
-    .then(r => r.json())
-    .then(d => { showToast(d.message || 'Refresh triggered!', 'success'); })
-    .catch(() => { showToast('Could not reach server', 'error'); })
-    .finally(() => { btn.disabled = false; btn.textContent = '🔄 {{ t("btn_refresh") }}'; });
-}
-</script>
 {% endblock %}

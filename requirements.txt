@@ -4,11 +4,8 @@ pandas
 numpy
 scikit-learn
 python-dotenv
-plotly
-matplotlib
-seaborn
-wordcloud
 PyPDF2
+python-docx
 apscheduler
 sentence-transformers
 beautifulsoup4

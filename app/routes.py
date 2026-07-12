@@ -369,7 +369,7 @@ def api_jobs():
         limit = int(request.args.get('limit', 100))
     except (ValueError, TypeError):
         limit = 100
-    jobs = fetch_all_jobs(country=country, job_type=job_type,
+    jobs, _sort = fetch_all_jobs(country=country, job_type=job_type,
                           contract_type=contract_type, limit=limit)
     return jsonify({'count': len(jobs), 'jobs': jobs})
 

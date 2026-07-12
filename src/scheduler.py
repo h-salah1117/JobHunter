@@ -93,7 +93,11 @@ def _refresh_job():
 
 def _auto_backfill_summaries_job():
     from datetime import datetime
-    from rag_assistant import is_summary_backed_off, get_summary_backoff, summarize_description
+    try:
+        from rag_assistant import is_summary_backed_off, get_summary_backoff, summarize_description
+    except Exception as import_err:
+        logging.warning(f"[Scheduler] rag_assistant unavailable, skipping summary backfill: {import_err}")
+        return
     from database import get_connection, update_job_summaries
     import time
     

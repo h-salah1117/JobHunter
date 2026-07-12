@@ -77,7 +77,8 @@
 {% block scripts %}
 <script>
 function triggerSummarization() {
-  showToast('{% if current_lang == "ar" %}جاري بدء التلخيص في الخلفية...{% else %}Starting summarization in background...{% endif %}');
+  var msg = ('{{ current_lang }}' === 'ar') ? 'جاري بدء التلخيص في الخلفية...' : 'Starting summarization in background...';
+  showToast(msg);
   fetch('/api/summarize-all', { method: 'POST' })
     .then(res => res.json())
     .then(data => {
@@ -88,9 +89,12 @@ function triggerSummarization() {
 }
 
 function resetSummaries() {
-  const msg = '{% if current_lang == "ar" %}متأكد إنك عايز تمسح كل التلخيصات؟ هتتحتاج وقت عشان تتعمل من تاني.{% else %}Are you sure? All summaries will be deleted and need to be regenerated.{% endif %}';
+  var msg = ('{{ current_lang }}' === 'ar')
+    ? 'متأكد إنك عايز تمسح كل التلخيصات؟ هتتحتاج وقت عشان تتعمل من تاني.'
+    : 'Are you sure? All summaries will be deleted and need to be regenerated.';
   if(confirm(msg)) {
-    showToast('{% if current_lang == "ar" %}جاري مسح التلخيصات...{% else %}Clearing summaries...{% endif %}');
+    var clearMsg = ('{{ current_lang }}' === 'ar') ? 'جاري مسح التلخيصات...' : 'Clearing summaries...';
+    showToast(clearMsg);
     fetch('/api/reset-summaries', { method: 'POST' })
       .then(res => res.json())
       .then(data => {

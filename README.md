@@ -21,6 +21,20 @@ An AI-powered job hunting platform that scrapes, recommends, and helps you land 
 - 📊 Analytics dashboard with 7 Plotly charts
 - 🌐 Bilingual English / Arabic interface
 
+## Screenshots
+
+<!-- add 2–3 screenshots: jobs page, recommendations, CV ATS score -->
+
+## Run locally
+
+```bash
+pip install -r requirements.txt
+# create a .env with the variables listed below
+python run.py
+```
+
+The app runs on http://localhost:7860 (add `PORT=7860` to your `.env`; without it, `run.py` falls back to port 5000).
+
 ## Setup (HF Spaces Secrets)
 Set these in your Space Settings → Variables and Secrets:
 - `ADZUNA_APP_ID` — Adzuna API ID
